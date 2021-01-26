@@ -1,14 +1,23 @@
 {
   "name": "tss8",
   "productName": "tss8",
-  "version": "1.0.1",
-  "description": "My Electron application description",
+  "version": "1.0.12",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/railty/tss8.git"
+  },
+  "description": "Tss8",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
+    "watch:tailwind": "postcss src/client/tailwind.css -o public/build/tailwind.css -w",
+    "build:tailwind": "set NODE_ENV=production && postcss src/client/tailwind.css -o public/build/tailwind.css",
+    "watch:svelte": "rollup -c -w",
+    "build:svelte": "rollup -c",
+    "test": "jest",
     "lint": "echo \"No linting configured\""
   },
   "keywords": [],
@@ -18,34 +27,15 @@
   },
   "license": "MIT",
   "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "tss8"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
-    }
+    "forge": "./forge.js"
   },
   "dependencies": {
+    "electron-log": "^4.3.1",
     "electron-squirrel-startup": "^1.0.0",
+    "final-fs": "^1.6.1",
+    "moment": "^2.29.1",
+    "sqlite-async": "^1.1.0",
+    "sqlite3": "^4.2.0",
     "update-electron-app": "^2.0.1"
   },
   "devDependencies": {
@@ -54,6 +44,25 @@
     "@electron-forge/maker-rpm": "^6.0.0-beta.54",
     "@electron-forge/maker-squirrel": "^6.0.0-beta.54",
     "@electron-forge/maker-zip": "^6.0.0-beta.54",
-    "electron": "11.2.1"
+    "@electron-forge/publisher-github": "^6.0.0-beta.54",
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "electron": "11.2.1",
+    "electron-builder": "^22.9.1",
+    "jest": "^26.6.3",
+    "postcss": "^8.2.4",
+    "postcss-cli": "^8.3.1",
+    "puppeteer-core": "^5.5.0",
+    "puppeteer-in-electron": "^3.0.3",
+    "rollup": "^2.38.0",
+    "rollup-plugin-css-only": "^3.1.0",
+    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-postcss": "^4.0.0",
+    "rollup-plugin-svelte": "^7.1.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "svelte": "^3.0.0",
+    "svelte-preprocess": "^4.6.1",
+    "tailwindcss": "^2.0.2"
   }
 }

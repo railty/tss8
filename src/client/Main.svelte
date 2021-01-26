@@ -1,0 +1,229 @@
+<script>
+	import { onMount, onDestroy, getContext } from 'svelte';
+
+	import uuidv4 from 'uuid/v4';
+	import { savePunch } from "./fb.js";
+
+	export let mode;
+	let cameraWidth = 240;
+	let  cameraHeight = 180;
+	let  video = null;
+	let  canvas = null;
+	let  context = null;
+	let  warning = false;
+	let strDate = "";
+	let strTime = "";
+	let barcode;
+	let checkin_name = '';
+	let checkin_photo = '';
+	let checkout_name = '';
+	let checkout_photo = '';
+	let last_timer = 0;
+	let interval = 0;
+
+	let config = {};
+
+	function setDt(){
+		var now = new Date();
+		//if (strDate=="" || now.getSeconds()==0){
+		if (true){
+			strDate = now.toLocaleDateString('en-US',{year: 'numeric', month:'2-digit', day:'2-digit', weekday:'long'}).replace(',', '');
+			if (!warning) strTime = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+		}
+		barcode.focus();
+	}
+
+	async function submit(empno){
+		let punch = {
+			id: uuidv4(),
+			empno: empno,
+			time: new Date(),
+		};
+		punch.photo = canvas.toDataURL("image/jpeg");
+		let employee = await electronSvr.punch(punch);
+		console.log(employee);
+
+		if (employee) {
+			if (employee.action == "checkin"){
+				checkin_name = '';
+				checkin_photo = 'image/enter.jpg';
+				checkout_name = employee.name;
+				checkout_photo = 'photos/' + employee.id + '.jpg';
+			}
+			if (employee.action == "checkout"){
+				checkin_name = employee.name;
+				checkin_photo = 'photos/' + employee.id + '.jpg';
+				checkout_name = '';
+				checkout_photo = 'image/exit.jpg';
+			}
+			if (employee.active == 0){
+				strTime = 'Account Disabled 此卡无效';
+				warning = true;
+			}
+		}
+
+      	if (last_timer != 0) {
+			clearTimeout(last_timer);
+        	last_timer = 0;
+		}
+
+      	let timeOut = warning ? config.warningCanvasTimeout: config.canvasTimeout;
+      	last_timer = setTimeout(function() {
+			video.style.zIndex = "2";
+			canvas.style.zIndex = "1";
+
+			checkin_name = '';
+			checkin_photo = '';
+			checkout_name = '';
+			checkout_photo = '';
+
+			warning = false;
+			last_timer = 0;
+		}, timeOut);
+		
+		punch.employee_id = employee.id;
+		punch.action = employee.action;
+		punch.store = config.storeId;
+		punch.hostname = config.hostname;
+		await savePunch(punch);
+	}
+	
+	onDestroy(() => {
+		if (last_timer != 0) {
+			clearTimeout(last_timer);
+        	last_timer = 0;
+		}
+
+		if (interval != 0) {
+			clearInterval(interval);
+        	interval = 0;
+		}
+	});
+
+	onMount(async () => {
+		context = canvas.getContext('2d');
+
+		video.onplay = function() {
+		};
+			  
+		video.onresize = function(){
+			console.log("resize camera");
+			cameraWidth = video.videoWidth;
+			cameraHeight = video.videoHeight;
+			if (canvas) {
+				canvas.width = cameraWidth;
+				canvas.height = cameraHeight;
+			}
+		}
+			  
+
+		if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+			navigator.mediaDevices.getUserMedia({video: true, audio: false })
+				.then(function(stream) {
+					if (video){
+						video.srcObject = stream;
+						video.play();
+					}
+				})
+				.catch(function(err) {
+					console.log(err);
+					}
+			);
+		}
+
+		setDt();
+		interval = setInterval(setDt, 1*1000);
+	});
+
+
+	function convertImageToCanvas(image) {
+		canvas.width = image.width;
+		canvas.height = image.height;
+		canvas.getContext("2d").drawImage(image, 0, 0);
+		return canvas;
+	}
+
+	function convertCanvasToImage(canvas) {
+		var image = new Image();
+		image.src = canvas.toDataURL("image/jpeg");
+		return image;
+	}
+
+	function convertCanvasToBlob(canvas) {
+		return new Promise(function(resolve, reject) {
+			canvas.toBlob((blob)=>{
+				resolve(blob);
+			}, 'image/jpeg', 0.95);
+  		});
+	}
+
+
+	function keypress(e){
+		//console.log(e);
+		if ((e.key == '!')||(e.key == 'Enter')){
+			var empno = barcode.value;
+			if (empno == 'admin@@@'){
+				mode = 'admin';
+			}
+			else {
+				////DEBUG  
+				empno = 'EMP08226';
+
+				empno = empno.match(/EMP\d+/);
+				if ((empno) && (empno[0])) {
+					if (context) context.drawImage(video, 0, 0, cameraWidth, cameraHeight);
+					video.style.zIndex = "1";
+					canvas.style.zIndex = "2";
+					submit(empno[0]);
+				}
+			}
+
+			barcode.value = '';
+			return false;
+		}
+	}
+
+</script>
+
+<header class="flex flex-row">
+    <div class="flex justify-center w-1/4 text-5xl" id="store">HQ</div>
+	<div class="flex-grow">
+		<section class="flex justify-center font-bold text-7xl text-red-600" id="time">{strTime}</section>
+	</div>
+	<div class="flex justify-center w-1/4 text-5xl" id="date" >{strDate}</div>
+</header>
+
+<main class="flex-grow flex flex-row">
+    <div class="flex flex-col justify-center items-center" style="width:240px">
+		<img class="rounded-md" src={checkin_photo} alt="" />
+		<div class="text-3xl">{checkin_name}</div>
+	</div>
+
+    <div class="flex-grow">
+        <div class="flex justify-center">
+            <video bind:this={video} style="position:absolute;z-index:2;" controls autoplay>
+				<track kind="captions"/>
+			</video>
+            <canvas bind:this={canvas} style="position:absolute;z-index:1;"></canvas>
+        </div>
+    </div>
+
+    <div class="flex flex-col justify-center items-center" style="width:240px">
+		<img class="rounded-md" src={checkout_photo} alt="">
+		<div class="text-3xl">{checkout_name}</div>
+	</div>
+</main>
+
+<footer class="flex flex-row justify-end items-center pt-2">
+	<input class="w-1/4 bg-blue-200 rounded-md" type="password" bind:this={barcode} on:keypress={keypress}>
+
+	<div class="px-4 border-l-2 flex-grow"></div>
+
+	<div class="px-4 border-l-2" id='status'></div>
+	<div class="px-4 border-l-2" id="db"></div>
+	<div class="px-4 border-l-2" id="ips"></div>
+	<div class="px-4 border-l-2" id="version">{globalThis.config ? globalThis.config.version : "waiting"}</div>
+</footer>
+
+<style>
+</style>

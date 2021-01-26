@@ -1,0 +1,15 @@
+to compile sqlite3 under windows
+run under admin
+npm install --global --production windows-build-tools
+
+sqlite3 version 5 is not working, can be installed with node, but cannot conpile with electron
+
+npm i sqlite3@4.2.0
+
+npm i electron-builder --save-dev
+ .\node_modules\.bin\electron-builder install-app-deps
+
+npm run start
+
+therefore sqlite-async need to be an older version as well
+npm i sqlite-async@1.1.0

@@ -87,3 +87,10 @@ typings/
 
 # Electron-Forge
 out/
+
+public/build/
+public/employees/
+public/camera/
+employees/
+camera/
+forge.js
