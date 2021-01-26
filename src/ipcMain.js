@@ -1,4 +1,4 @@
-const { ipcMain } = require('electron');
+const { ipcMain, dialog } = require('electron');
 const logger = require('electron-log');
 const db = new (require('./dbSqlite'))();
 const ffs = require('final-fs');
@@ -60,6 +60,13 @@ module.exports = function () {
         logger.info("saving "+photoName);
         await ffs.writeFile(photoName, buffer);
         logger.info("saved "+photoName);
+    })
+
+    ipcMain.handle('loadPhotos', async (event) => {
+        let result = await dialog.showOpenDialog(global.mainWindow, {
+            properties: ['openDirectory']
+        })
+        console.log(result);
     })
 
     ipcMain.handle('getConfig', async (event) => {

@@ -3,6 +3,7 @@ const ffs = require('final-fs');
 const sqlite3 = require('sqlite-async')
 const logger = require('electron-log');
 const path = require('path');
+const MD5 = require("crypto-js/md5");
 
 class DBSQLite{
   constructor(){
@@ -183,15 +184,15 @@ class DBSQLite{
     await tss.close();
 
     for (let e of employees) {
-        let pf = `public/employees/${e.id}.jpg`;
+        let pf = path.join(global.config.employeePhotoPath, e.id + ".jpg");
         try {
             let binary = await ffs.readFile(pf);
             e.photo = 'data:image/jpeg;base64,' + Buffer.from(binary).toString('base64');
             e.photo_md5 = MD5(e.photo).toString();
-            console.log(e.photo_md5);
+            logger.log(e.photo_md5);
         }
         catch (ex) {
-            console.log(`cannot find ${pf}`);
+            logger.log(`cannot find ${pf}`);
         }
     }
     return employees;

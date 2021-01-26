@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld('electronSvr', {
     savePhoto: async (id, dataUrl) => {
         return await ipcRenderer.invoke('savePhoto', id, dataUrl);
     },
+    loadPhotos: async () => {
+        return await ipcRenderer.invoke('loadPhotos');
+    },
     receive: (channel, func) => {
         console.log(channel);
         let validChannels = ["fromServer"];
