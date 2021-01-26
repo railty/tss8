@@ -60,12 +60,12 @@ async function init(){
     version: app.getVersion()
   }};
 
-  global.config.sqlite.tss = path.join(global.config.appPath, "tss.sqlite");
-  global.config.sqlite.punch = path.join(global.config.appPath, "punch.sqlite");
+  global.config.sqlite.tss = path.join(global.config.userDataPath, "tss.sqlite");
+  global.config.sqlite.punch = path.join(global.config.userDataPath, "punch.sqlite");
   for (let f of ['tss.sqlite', 'punch.sqlite']) await initDBFile(f);  
 
-  global.config.employeePhotoPath = path.join(global.config.appPath, "employees/");
-  global.config.cameraPath = path.join(global.config.appPath, "camera/");
+  global.config.employeePhotoPath = path.join(global.config.userDataPath, "employees/");
+  global.config.cameraPath = path.join(global.config.userDataPath, "camera/");
 
   for (let fd of [global.config.employeePhotoPath, global.config.cameraPath]) await initFolder(fd);  
 
