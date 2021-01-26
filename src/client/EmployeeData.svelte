@@ -1,6 +1,8 @@
 <script>
+import semver from "semver";
 import { onMount } from 'svelte';
 import { getEmployees } from "./fb.js";
+
 
 let localEmployees;
 let remoteEmployees;
@@ -97,11 +99,113 @@ async function reconcile(){
     await dlEmployees();
 }
 
+function assetPlatform(fileName){
+  if (/.*(mac|darwin|osx).*(-arm).*\.zip/i.test(fileName)) {
+    return PLATFORM_ARCH.DARWIN_ARM64
+  }
+
+  if (/.*(mac|darwin|osx).*\.zip/i.test(fileName) && !/arm64/.test(fileName)) {
+    return PLATFORM_ARCH.DARWIN_X64
+  }
+
+  if (/win32-ia32/.test(fileName)) return PLATFORM_ARCH.WIN_IA32
+  if (/win32-arm64/.test(fileName)) return PLATFORM_ARCH.WIN_ARM64
+  if (/win32-x64|(\.exe$)/.test(fileName)) return PLATFORM_ARCH.WIN_X64
+  return false
+}
+
+const PLATFORM_ARCH = {
+  DARWIN_X64: 'darwin-x64',
+  DARWIN_ARM64: 'darwin-arm64',
+  WIN_X64: 'win32-x64',
+  WIN_IA32: 'win32-ia32',
+  WIN_ARM64: 'win32-arm64'
+}
+const PLATFORM_ARCHS = Object.values(PLATFORM_ARCH);
+
+function hasAllAssets(latest){
+  return !!(
+    latest[PLATFORM_ARCH.DARWIN_X64] &&
+    latest[PLATFORM_ARCH.DARWIN_ARM64] &&
+    latest[PLATFORM_ARCH.WIN_X64] &&
+    latest[PLATFORM_ARCH.WIN_IA32] &&
+    latest[PLATFORM_ARCH.WIN_ARM64]
+  )
+}
+
+function hasAnyAsset(latest){
+  return !!(
+    latest[PLATFORM_ARCH.DARWIN_X64] ||
+    latest[PLATFORM_ARCH.DARWIN_ARM64] ||
+    latest[PLATFORM_ARCH.WIN_X64] ||
+    latest[PLATFORM_ARCH.WIN_IA32] ||
+    latest[PLATFORM_ARCH.WIN_ARM64]
+  )
+}
+
+async function update(){
+    let account = 'railty';
+    let repository = 'tss8';
+    const url = `https://api.github.com/repos/${account}/${repository}/releases?per_page=100`;
+
+    const headers = { Accept: 'application/vnd.github.preview' };
+    //if (this.token) headers.Authorization = `token ${this.token}`;
+    const res = await fetch(url, { headers });
+
+    if (res.status === 403) {
+      console.error('Rate Limited!')
+      return
+    }
+
+    if (res.status >= 400) {
+      return
+    }
+
+    let latest = {}
+
+    const releases = await res.json()
+    for (const release of releases) {
+      if (!semver.valid(release.tag_name) || release.draft ) continue;
+
+      for (const asset of release.assets) {
+        const platform = assetPlatform(asset.name)
+        if (platform && !latest[platform]) {
+          latest[platform] = {
+            name: release.name,
+            version: release.tag_name,
+            url: asset.browser_download_url,
+            notes: release.body
+          }
+        }
+        if (hasAllAssets(latest)) {
+          break
+        }
+      }
+    }
+
+    for (const key of [PLATFORM_ARCH.WIN_X64, PLATFORM_ARCH.WIN_IA32, PLATFORM_ARCH.WIN_ARM64]) {
+      if (latest[key]) {
+        const rurl = `https://github.com/${account}/${repository}/releases/download/${latest[key].version}/RELEASES`
+        const rres = await fetch(rurl)
+        if (rres.status < 400) {
+          const body = await rres.text()
+          const matches = body.match(/[^ ]*\.nupkg/gim)
+          const nuPKG = rurl.replace('RELEASES', matches[0])
+          latest[key].RELEASES = body.replace(matches[0], nuPKG)
+        }
+      }
+    }
+
+    latest = hasAnyAsset(latest) ? latest : null;
+    console.log(latest.RELEASES);
+}
+
 </script>
 <div class="flex flex-row">
     <button class="m-4" on:click={dlEmployees}>Download Employees</button>
     <button class="m-4" on:click={reconcile}>Reconcile </button>
     <button class="m-4" on:click={dlPhoto}>Dl Photo</button>
+    <button class="m-4" on:click={update}>Update</button>
 </div>
 
 {#if remoteEmployees}

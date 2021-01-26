@@ -7,8 +7,8 @@
 	import PunchData from './PunchData.svelte';	
 	import EmployeeData from './EmployeeData.svelte';	
 
-	let mode = 'clock';
-	//let mode = 'admin';
+	//let mode = 'clock';
+	let mode = 'admin';
 
 	let popup = false;
 	let menu = 'employeeData';
