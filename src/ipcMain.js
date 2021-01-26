@@ -57,9 +57,9 @@ module.exports = function () {
         let buffer = Buffer.from(data, 'base64');
 
         let photoName = path.join(global.config.employeePhotoPath, id + ".jpg");
+        logger.info("saving "+photoName);
         await ffs.writeFile(photoName, buffer);
-
-        console.log("photo saved");
+        logger.info("saved "+photoName);
     })
 
     ipcMain.handle('getConfig', async (event) => {

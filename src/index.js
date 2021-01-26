@@ -69,7 +69,7 @@ init();
 
 require('update-electron-app')({
   updateInterval: '1 hour',
-  notifyUser: false,
+  notifyUser: true,
   logger: logger
 });
 
