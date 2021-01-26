@@ -35,9 +35,14 @@ async function initDBFile(filename){
 }
 
 async function initFolder(fd){
+  logger.info("checking " + ex.toString());
   try{
     let bExist = await ffs.exists(fd);
-    if (!bExist) {
+    if (bExist) {
+      logger.info("skip creating " + ex.toString());
+    }
+    else{
+      logger.info("creating " + ex.toString());
       await ffs.mkdir(fd);
     }
   }
