@@ -2,13 +2,13 @@
 	import { onMount } from 'svelte';
 
 	export let mode = 'admin';
-	export let menu = 'setting';
-
 	function logout(){
 		mode = 'clock';
 	}
 
 	let popup = false;
+	export let menu = 'setting';
+
 	let activeMenuClass = "bg-gray-900 text-white px-3 py-2 rounded-md font-medium";
 	let menuClass = "text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md font-medium";
 	let menus = [
@@ -89,3 +89,6 @@
 	  </div>
 	</div>
 </nav>
+
+<style>
+</style>

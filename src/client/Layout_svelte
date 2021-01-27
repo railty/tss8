@@ -1,0 +1,35 @@
+<script>
+	import { onMount } from 'svelte';
+
+	async function init(){
+		globalThis.config = await electronSvr.getConfig();
+	}
+
+	let loading;		
+	onMount(async () => {
+		loading = init();		
+	});
+
+</script>
+
+{#await loading}
+	<div class="flex h-screen">
+		<div class="m-auto">
+			<h1 class="text-6xl text-red-200">Loading ...</h1>
+		</div>
+	</div>
+{:then}
+	<header class="flex flex-row">
+		<slot name="header"></slot>
+	</header>
+
+	<main class="flex-grow flex flex-row">
+		<slot name="main"></slot>
+	</main>
+
+	<footer class="flex flex-row justify-end items-center pt-2">
+		<slot name="footer"></slot>
+	</footer>
+{/await}
+
+

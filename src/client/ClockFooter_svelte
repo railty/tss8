@@ -1,0 +1,37 @@
+<script>
+	import { onMount, onDestroy } from 'svelte';
+
+	let interval = 0;
+	let barcode;
+	export let onEnter;
+
+	function setDt(){
+		barcode.focus();
+	}
+
+	onMount(async () => {
+		setDt();
+		interval = setInterval(setDt, 1*1000);
+	});
+
+	onDestroy(() => {
+		if (interval != 0) {
+			clearInterval(interval);
+        	interval = 0;
+		}
+	});
+
+	function keypress(e){
+		//console.log(e);
+		if ((e.key == '!')||(e.key == 'Enter')){
+			onEnter(barcode.value);
+
+			barcode.value = '';
+			return false;
+		}
+	}
+
+</script>
+
+<input class="w-1/4 bg-blue-200 rounded-md" type="password" bind:this={barcode} on:keypress={keypress}>
+

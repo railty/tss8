@@ -5,7 +5,6 @@ const ffs = require('final-fs');
 const path = require('path');
 
 module.exports = function () {
-
     ipcMain.handle('punch', async (event, data) => {
         let employee = await db.savePunch(data);
         console.log("punch saved");
@@ -28,17 +27,7 @@ module.exports = function () {
     })
 
     ipcMain.handle('getLocalPunches', async (event) => {
-        const punch = await sqlite3.open(config.sqlite.punch);
-        let punches = await punch.all(`SELECT * from punches order by updated_at`);
-        await punch.close();
-
-        for (let p of punches) {
-            if (p.photo_name) {
-                var binary = await ffs.readFile(p.photo_name);
-                p.photo = 'data:image/jpeg;base64,' + Buffer.from(binary).toString('base64');
-            }
-        }
-        return punches;
+        return await db.getLocalPunches();
     })
 
     ipcMain.handle('getLocalEmployees', async (event) => {
@@ -66,7 +55,21 @@ module.exports = function () {
         let result = await dialog.showOpenDialog(global.mainWindow, {
             properties: ['openDirectory']
         })
-        console.log(result);
+        if (!result.canceled){
+            let src = result.filePaths[0];
+            logger.log(src);
+            let srcFs = await ffs.readdir(src);
+            for (let f of srcFs){
+                if (f.match(/\.jpg$/)){
+                    try{
+                        await ffs.copy(path.join(src, f), path.join(global.config.employeePhotoPath, f));
+                    }
+                    catch(ex){
+                        console.log(ex.toString());
+                    }
+                }
+            }
+        }
     })
 
     ipcMain.handle('getConfig', async (event) => {

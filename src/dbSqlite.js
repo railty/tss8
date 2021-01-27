@@ -45,7 +45,7 @@ class DBSQLite{
     const Utils = require('../utils.js');
 
     const punch = await sqlite3.open(this.dbConfig.punch);
-    let punches = await punch.all(`SELECT * from punches WHERE state is null order by created_at limit ${config.sync.punchLimit}`);
+    let punches = await punch.all(`SELECT * from punches WHERE state is null order by created_at limit ${global.config.sync.punchLimit}`);
     await punch.close();
 
     //await array.map must be wrapped in Promise.all
@@ -78,7 +78,7 @@ class DBSQLite{
 
   async purgePunches(){
     const punch = await sqlite.open(this.dbConfig.punch);
-    let sql = `delete from punches WHERE state = 'uploaded' and (julianday('now') - julianday(updated_at)) > ${config.sync.punchExpiredDays}`;
+    let sql = `delete from punches WHERE state = 'uploaded' and (julianday('now') - julianday(updated_at)) > ${global.config.sync.punchExpiredDays}`;
     await punch.run(sql);
     await punch.close();
   }
@@ -93,7 +93,7 @@ class DBSQLite{
     const punch = await sqlite3.open(this.dbConfig.punch);
 
     //only local store employee can punch
-    let sql = `SELECT id, empno, barcode, name, name_cn, department, active, active2 from employees WHERE store_id = ${config.storeId} and barcode = '${barcode}'`;
+    let sql = `SELECT id, empno, barcode, name, name_cn, department, active, active2 from employees WHERE store_id = ${global.config.storeId} and barcode = '${barcode}'`;
     logger.info(sql);
     const employees = await tss.all(sql);
 
@@ -103,7 +103,7 @@ class DBSQLite{
     if (employees.length > 0){
       let tm = new Date();
       let dayStart = new Date(tm.getTime()); //make a copy of tm
-      dayStart.setHours(config.startHour);
+      dayStart.setHours(global.config.startHour);
       dayStart.setMinutes(0);
       dayStart.setSeconds(0);
       dayStart.setMilliseconds(0);
@@ -146,11 +146,11 @@ class DBSQLite{
           let data = matches[2];
           let buffer = Buffer.from(data, 'base64');
   
-          photoName = config.camera.path + punchId + '.' + ext;
+          photoName = path.join(global.config.cameraPath, punchId + '.' + ext);
           await ffs.writeFile(photoName, buffer);
         }
   
-        let res = await punch.run('INSERT into punches(id, time, employee_id, action, store, node, photo_name, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)', [punchId, tm, empId, punchAction, config.store, config.hostname, photoName, tm, tm]);
+        let res = await punch.run('INSERT into punches(id, time, employee_id, action, store, node, photo_name, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)', [punchId, tm, empId, punchAction, global.config.store, global.config.hostname, photoName, tm, tm]);
         if (res && res.changes && res.changes == 1){
           //console.log('OK');
           rc = {
@@ -218,6 +218,20 @@ class DBSQLite{
     console.log("employee saved");
   }  
 
+  async getLocalPunches(){
+    const punch = await sqlite3.open(this.dbConfig.punch);
+    let punches = await punch.all(`SELECT * from punches order by updated_at`);
+    await punch.close();
+
+    for (let p of punches) {
+        if (p.photo_name) {
+            var binary = await ffs.readFile(p.photo_name);
+            p.photo = 'data:image/jpeg;base64,' + Buffer.from(binary).toString('base64');
+        }
+    }
+    return punches;
+
+  }
 }
 
 

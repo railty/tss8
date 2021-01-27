@@ -4,8 +4,8 @@
         "path": "./public/camera/",
         "enabled": true
     },
-    "canvasTimeout": 3004,
-    "warningCanvasTimeout": 30000,
+    "canvasTimeout": 3000,
+    "warningCanvasTimeout": 5000,
     "sqlite": {
         "punch": "./db/punch.sqlite",
         "tss": "./db/tss.sqlite"

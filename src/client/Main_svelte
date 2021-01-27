@@ -224,6 +224,3 @@
 	<div class="px-4 border-l-2" id="ips"></div>
 	<div class="px-4 border-l-2" id="version">{globalThis.config ? globalThis.config.version : "waiting"}</div>
 </footer>
-
-<style>
-</style>

@@ -1,56 +1,50 @@
 <script>
 	import { onMount, setContext } from 'svelte';
+	import Clock from './Clock.svelte';
+	import Admin from './Admin.svelte';
 
-	import Navbar from './Navbar.svelte';	
-	import Main from './Main.svelte';
-	import Setting from './Setting.svelte';	
-	import PunchData from './PunchData.svelte';	
-	import EmployeeData from './EmployeeData.svelte';	
-
-	//let mode = 'clock';
-	let mode = 'admin';
-
-	let popup = false;
-	let menu = 'employeeData';
+	let mode = 'clock';
+	//let mode = 'admin';
 
 	async function init(){
 		globalThis.config = await electronSvr.getConfig();
+	}
+	async function initDebug(){
+		return new Promise((resolve)=>{
+			setTimeout(()=>{
+				resolve();
+			}, 1*1000);
+		});
 	}
 
 	let loading;		
 	onMount(async () => {
 		loading = init();		
 	});
-
 </script>
 
-{#await loading}
-	<div class="flex h-screen">
+
+<div class="flex flex-col h-screen">
+	{#await loading}		
 		<div class="m-auto">
 			<h1 class="text-6xl text-red-200">Loading ...</h1>
 		</div>
-	</div>
-{:then}
-	{#if mode=='admin'}
-		<Navbar bind:menu={menu} bind:mode={mode}/>
-
-		{#if menu=='setting'}
-			<Setting />
-		{/if}
-
-		{#if menu=='punchData'}
-			<PunchData />
-		{/if}
-
-		{#if menu=='employeeData'}
-			<EmployeeData />
-		{/if}
-
-	{:else}
-		<Main bind:mode={mode}/>
-	{/if}
-{/await}
-
-<style>
-</style>
-
+	{:then}
+		<main class="flex flex-grow">
+			{#if mode=='admin'}
+				<Admin bind:mode={mode}/>
+			{/if}
+			{#if mode=='clock'}
+				<Clock bind:mode={mode}/>
+			{/if}
+		</main>
+			
+		<footer class="flex flex-row justify-end items-center pt-2">
+			<div class="px-4 border-l-2 flex-grow"></div>
+			<div class="px-4 border-l-2" id='status'></div>
+			<div class="px-4 border-l-2" id="db"></div>
+			<div class="px-4 border-l-2" id="ips"></div>
+			<div class="px-4 border-l-2" id="version">{globalThis.config ? globalThis.config.version : "waiting"}</div>
+		</footer>
+	{/await}
+</div>

@@ -1,0 +1,36 @@
+<script>
+	import { onMount, onDestroy } from 'svelte';
+
+	let strDate = "";
+	let strTime = "";
+
+	let interval = 0;
+
+	function setDt(){
+		var now = new Date();
+		//change when the seconds is 0, if you want less notification
+		//if (strDate=="" || now.getSeconds()==0){
+		if (true){
+			strDate = now.toLocaleDateString('en-US',{year: 'numeric', month:'2-digit', day:'2-digit', weekday:'long'}).replace(',', '');
+			strTime = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+		}
+	}
+
+	onMount(async () => {
+		setDt();
+		interval = setInterval(setDt, 1*1000);
+	});
+
+	onDestroy(() => {
+		if (interval != 0) {
+			clearInterval(interval);
+        	interval = 0;
+		}
+	});
+
+</script>
+<div class="flex justify-center w-1/4 text-5xl" id="store">HQ</div>
+<div class="flex-grow">
+	<section class="flex justify-center font-bold text-7xl text-red-600" id="time">{strTime}</section>
+</div>
+<div class="flex justify-center w-1/4 text-5xl" id="date" >{strDate}</div>
