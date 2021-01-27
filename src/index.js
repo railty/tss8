@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, autoUpdater } = require('electron');
 const path = require('path');
 const logger = require('electron-log');
 const ffs = require('final-fs');
@@ -20,13 +20,14 @@ function detectEnv(){
 
 detectEnv();
 
-async function initDBFile(filename){
-  let dBFile = path.join(global.config.appPath, filename);
+async function initFile(f){
+  f.src = path.join(app.getPath('appData'), f.src);
+  f.dest = path.join(app.getPath('userData'), f.dest);
+
   try{
-    let bExist = await ffs.exists(dBFile);
+    let bExist = await ffs.exists(f.dest);
     if (!bExist) {
-      let dBTemplate = path.join(global.config.appPath, "src", filename + ".template");
-      await ffs.copy( dBTemplate, dBFile );
+      await ffs.copy( f.src, f.dest );
     }
   }
   catch(ex){
@@ -36,6 +37,7 @@ async function initDBFile(filename){
 
 async function initFolder(fd){
   logger.info("checking " + fd);
+  fd = path.join(app.getPath('userData'), fd);
   try{
     let bExist = await ffs.exists(fd);
     if (bExist) {
@@ -52,7 +54,14 @@ async function initFolder(fd){
 }
 
 async function init(){
-  global.config = require('./config.json');
+  for (let fd of ['db/', 'db/employees/', 'db/camera/']) await initFolder(fd);  
+  for (let f of [
+    {src: 'src/config.json.template', dest: 'config.json'}, 
+    {src: 'src/tss.sqlite.template', dest: 'db/tss.sqlite'}, 
+    {src: 'src/punch.sqlite.template', dest: 'db/punch.sqlite'}
+  ]) await initFile(f);  
+
+  global.config = require(path.join(global.config.userDataPath, "config.json"));
   global.config = {...global.config, ...{
     appData: app.getPath('appData'),
     appPath: app.getAppPath(),
@@ -60,21 +69,18 @@ async function init(){
     version: app.getVersion()
   }};
 
-  global.config.sqlite.tss = path.join(global.config.userDataPath, "tss.sqlite");
-  global.config.sqlite.punch = path.join(global.config.userDataPath, "punch.sqlite");
-  for (let f of ['tss.sqlite', 'punch.sqlite']) await initDBFile(f);  
+  global.config.sqlite.tss = path.join(global.config.userDataPath, "db/tss.sqlite");
+  global.config.sqlite.punch = path.join(global.config.userDataPath, "db/punch.sqlite");
 
-  global.config.employeePhotoPath = path.join(global.config.userDataPath, "employees/");
-  global.config.cameraPath = path.join(global.config.userDataPath, "camera/");
-
-  for (let fd of [global.config.employeePhotoPath, global.config.cameraPath]) await initFolder(fd);  
-
+  global.config.employeePhotoPath = path.join(global.config.userDataPath, "db/employees/");
+  global.config.cameraPath = path.join(global.config.userDataPath, "db/camera/");
 }
+
 init();
 
 require('update-electron-app')({
   updateInterval: '1 hour',
-  notifyUser: true,
+  notifyUser: false,
   logger: logger
 });
 
@@ -82,6 +88,21 @@ require('update-electron-app')({
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
   app.quit();
 }
+
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+  const dialogOpts = {
+    type: 'info',
+    buttons: ['Restart', 'Later'],
+    title: 'Application Update',
+    message: process.platform === 'win32' ? releaseNotes : releaseName,
+    detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+  }
+
+  dialog.showMessageBox(dialogOpts).then((returnValue) => {
+    if (returnValue.response === 0) autoUpdater.quitAndInstall()
+  })
+})
+
 
 const createWindow = () => {
   // Create the browser window.

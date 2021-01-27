@@ -1,0 +1,40 @@
+{
+    "storeId": 2,
+    "camera": {
+        "path": "./public/camera/",
+        "enabled": true
+    },
+    "canvasTimeout": 3000,
+    "warningCanvasTimeout": 5000,
+    "sqlite": {
+        "punch": "./db/punch.sqlite",
+        "tss": "./db/tss.sqlite"
+    },
+    "devTool": true,
+    "hostname": "tss-hq",
+    "store": "HQ",
+    "refreshTimeout": 1000,
+    "checkServerTimeout": 60000,
+    "reconnectTimeout": 6000,
+    "startHour": 6,
+    "mysql": {
+        "host": "192.168.168.226",
+        "user": "111",
+        "password": "xxx",
+        "database": "tss"
+    },
+    "employeePhotoPath": "./public/employees/",
+    "serverUrl": "http://192.168.168.226/clock/",
+    "host": "tss.vpnhub.center",
+    "port": 8000,
+    "sync": {
+        "masterUrl": "http://tss-master.vpnhub.center/clock/",
+        "intervalDlEmployees": 10000,
+        "intervalUlPunches": 10000,
+        "punchLimit": 2,
+        "employeeLimit": 5,
+        "punchExpiredDays": 7,
+        "enabled": true
+    },
+    "version": "1.0.2"
+}
