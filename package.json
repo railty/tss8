@@ -1,7 +1,7 @@
 {
   "name": "tss8",
   "productName": "tss8",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "repository": {
     "type": "git",
     "url": "https://github.com/railty/tss8.git"
