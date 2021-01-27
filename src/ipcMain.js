@@ -4,17 +4,16 @@ const db = new (require('./dbSqlite'))();
 const ffs = require('final-fs');
 const path = require('path');
 
+const { showMsg } = require('./utils');
+
 module.exports = function () {
     ipcMain.handle('punch', async (event, data) => {
         let employee = await db.savePunch(data);
-        console.log("punch saved");
         return employee;
     })
 
     ipcMain.handle('readConfig', async (event) => {
-        let config = await ffs.readFile('./src/config.json', 'utf8');
-        config = JSON.parse(config);
-        return config;
+        return global.config;
     })
 
     ipcMain.handle('writeConfig', async (event, config) => {
@@ -59,17 +58,28 @@ module.exports = function () {
             let src = result.filePaths[0];
             logger.log(src);
             let srcFs = await ffs.readdir(src);
+            let i = 0;
             for (let f of srcFs){
+                i = i + 1;
                 if (f.match(/\.jpg$/)){
                     try{
-                        await ffs.copy(path.join(src, f), path.join(global.config.employeePhotoPath, f));
+                        let srcF = path.join(src, f);
+                        let destF = path.join(global.config.employeePhotoPath, f);
+
+                        let bExist = await ffs.exists(srcF, destF);
+                        if (!bExist){
+                            showMsg(`[${i}/${srcFs.length}] copying ${srcF} to ${destF}`);
+                            await ffs.copy(srcF, destF);
+                        }
                     }
                     catch(ex){
                         console.log(ex.toString());
                     }
                 }
             }
+            return true;
         }
+        return false;
     })
 
     ipcMain.handle('getConfig', async (event) => {

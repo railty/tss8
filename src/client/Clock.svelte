@@ -25,42 +25,41 @@
 		};
 		punch.photo = canvas.toDataURL("image/jpeg");
 		employee = await electronSvr.punch(punch);
-		console.log(employee);
-
-		state = employee.action;
-		video.style.zIndex = "1";
-		canvas.style.zIndex = "2";
 
 		if (employee) {
+			console.log(employee);
+
+			video.style.zIndex = "1";
+			canvas.style.zIndex = "2";
+
 			state = employee.action;
 			if (employee.active == 0){
 				warnings = ['Account Disabled', '此卡无效'];
 			}
-		}
 
-      	if (last_timer != 0) {
-			clearTimeout(last_timer);
-        	last_timer = 0;
-		}
 
-      	let timeOut = warnings ? globalThis.config.warningCanvasTimeout: globalThis.config.canvasTimeout;
-      	last_timer = setTimeout(function() {
-			state = 'clock';
-			warnings = null;
-			last_timer = 0;
+			if (last_timer != 0) {
+				clearTimeout(last_timer);
+				last_timer = 0;
+			}
 
-			video.style.zIndex = "2";
-			canvas.style.zIndex = "1";
+			let timeOut = warnings ? globalThis.config.warningCanvasTimeout : globalThis.config.canvasTimeout;
+			last_timer = setTimeout(function() {
+				state = 'clock';
+				warnings = null;
+				last_timer = 0;
 
-		}, timeOut);
-
+				video.style.zIndex = "2";
+				canvas.style.zIndex = "1";
+			}, timeOut);
 		
-		//save to fb
-		punch.employee_id = employee.id;
-		punch.action = employee.action;
-		punch.store = globalThis.config.storeId;
-		punch.hostname = globalThis.config.hostname;
-		await savePunch(punch);
+			//save to fb
+			punch.employee_id = employee.id;
+			punch.action = employee.action;
+			punch.store_id = globalThis.config.storeId;
+			punch.hostname = globalThis.config.hostname;
+			await savePunch(punch);
+		}
 	}
 
 	let warnings = null;
@@ -199,6 +198,19 @@
 			strTime = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
 		}
 		if (barcode) barcode.focus();
+		
+		swapTexts();
+	}
+
+	let first = true;
+	function swapTexts(){
+		first = !first;
+
+		warnings = warnings;
+	}
+	function swapText(ts){
+		if (first) return ts[0];
+		return ts[1];
 	}
 </script>
 
@@ -218,8 +230,9 @@
 		
 		<div class="flex-grow flex flex-col justify-center items-center">
 			{#if warnings}
-				<div class="flex justify-center content-center font-bold text-6xl bg-yellow-200 text-red-600">{warnings[0]}</div>
-				<div class="flex justify-center content-center font-bold text-6xl bg-yellow-200 text-red-600">{warnings[1]}</div>
+				<div class="flex justify-center content-center font-bold text-6xl bg-yellow-200 text-red-600 mt-10">
+					{swapText(warnings)}
+				</div>
 			{/if}
 			<video bind:this={video} style="position:absolute;z-index:1};" controls autoplay>
 				<track kind="captions"/>

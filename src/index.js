@@ -2,12 +2,16 @@ const { app, BrowserWindow, autoUpdater } = require('electron');
 const path = require('path');
 const logger = require('electron-log');
 const ffs = require('final-fs');
-
+const isDev = require('electron-is-dev');
+ 
 function detectEnv(){
   logger.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+  //exec and app
   logger.log("app.getAppPath()=", app.getAppPath());
-  logger.log("app.getPath('appData')=", app.getPath('appData'));
+  //config data
   logger.log("app.getPath('userData')=", app.getPath('userData'));
+
+  logger.log("app.getPath('appData')=", app.getPath('appData'));
   logger.log("app.getPath('logs')=", app.getPath('logs'));
   logger.log("app.getPath('exe')=", app.getPath('exe'));
   logger.log("process.execPath=", process.execPath);
@@ -21,7 +25,7 @@ function detectEnv(){
 detectEnv();
 
 async function initFile(f){
-  f.src = path.join(app.getPath('appData'), f.src);
+  f.src = path.join(app.getAppPath(), f.src);
   f.dest = path.join(app.getPath('userData'), f.dest);
 
   try{
@@ -61,9 +65,8 @@ async function init(){
     {src: 'src/punch.sqlite.template', dest: 'db/punch.sqlite'}
   ]) await initFile(f);  
 
-  global.config = require(path.join(global.config.userDataPath, "config.json"));
+  global.config = require(path.join(app.getPath('userData'), "config.json"));
   global.config = {...global.config, ...{
-    appData: app.getPath('appData'),
     appPath: app.getAppPath(),
     userDataPath: app.getPath('userData'),
     version: app.getVersion()
@@ -106,9 +109,11 @@ autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
 
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+
+  let options = {
     alwaysOnTop: false,
     frame: true,
+    fullscreen: !isDev,
     fullscreenable: true,
     transparent: false,
     titleBarStyle: 'default',
@@ -119,12 +124,14 @@ const createWindow = () => {
       contextIsolation: true,
       preload: __dirname + '/preload.js'
     }
-  });
+  };
+  const mainWindow = new BrowserWindow(options);
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, '../public/index.html'));
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  
+  if (isDev) mainWindow.webContents.openDevTools();
 
   global.mainWindow = mainWindow;
 };

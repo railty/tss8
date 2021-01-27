@@ -1,12 +1,12 @@
 <script>
 import { onMount } from 'svelte';
 import { savePunch, getPunches } from "./fb.js";
+import Button from "./Button.svelte";
 
 let localPunches;
 let remotePunches;
 
 onMount(async () => {
-    await loadPunches();
 });
 
 async function loadPunches(){
@@ -59,7 +59,11 @@ async function reconcile(){
 }
 
 </script>
-<button on:click={reconcile}>Reconcile Punch</button>
+<div class="flex flex-row">
+    <Button on:click={loadPunches}>Load Punches</Button>
+    <Button on:click={reconcile}>Reconcile</Button>
+</div>
+
 {#if localPunches}
     <table class="border-collapse border-2">
         <tr>

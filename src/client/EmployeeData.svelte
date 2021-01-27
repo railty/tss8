@@ -3,6 +3,8 @@ import semver from "semver";
 import { onMount } from 'svelte';
 import { getEmployees } from "./fb.js";
 
+import Button from "./Button.svelte";
+
 let localEmployees;
 let remoteEmployees;
 
@@ -98,19 +100,17 @@ async function reconcile(){
     await dlEmployees();
 }
 
-async function update(){
-  console.log("1111");
-  await electronSvr.loadPhotos();
-  
-  //console.log(result)
+async function loadPhotos(){
+  let rc = await electronSvr.loadPhotos();
+  if (rc) await dlEmployees();
 }
 
 </script>
 <div class="flex flex-row">
-    <button class="m-4" on:click={dlEmployees}>Download Employees</button>
-    <button class="m-4" on:click={reconcile}>Reconcile </button>
-    <button class="m-4" on:click={dlPhoto}>Dl Photo</button>
-    <button class="m-4" on:click={update}>Update</button>
+    <Button on:click={dlEmployees}>Download Employees</Button>
+    <Button on:click={reconcile}>Reconcile</Button>
+    <Button on:click={dlPhoto}>Download Photo</Button>
+    <Button on:click={loadPhotos}>Load Photo</Button>
 </div>
 
 {#if remoteEmployees}

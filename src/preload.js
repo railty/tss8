@@ -34,5 +34,10 @@ contextBridge.exposeInMainWorld('electronSvr', {
         if (validChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => func(...args));
         }
+    },
+    setupListener: (func) => {
+        ipcRenderer.on('message', (event, message) => {
+            func(message);
+        })
     }
-})
+});

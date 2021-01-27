@@ -3,6 +3,9 @@ export async function savePunch(punch) {
     let punchRef = firebaseDb.collection("punches").doc(punch.id);
     await punchRef.set(data);
 
+    punchRef = firebaseDb.collection("stores").doc(punch.store_id.toString()).collection("employees").doc(punch.employee_id.toString()).collection("punches").doc(punch.id.toString());
+    await punchRef.set(data);
+
     let storageRef = filebaseStorage.ref();
     let cameraRef = storageRef.child(`camera/${punch.id}.jpg`);
 

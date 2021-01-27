@@ -5,14 +5,15 @@ const logger = require('electron-log');
 const path = require('path');
 const MD5 = require("crypto-js/md5");
 
+const { showMsg } = require('./utils');
+
 class DBSQLite{
   constructor(){
-    this.dbConfig = global.config.sqlite;
   }
 
   async getDbStats(){
-    const tss = await sqlite.open(this.dbConfig.tss);
-    const punch = await sqlite.open(this.dbConfig.punch);
+    const tss = await sqlite.open(global.config.sqlite.tss);
+    const punch = await sqlite.open(global.config.sqlite.punch);
 
     let res = await tss.get(`SELECT count(*) as ct from employees`);
     let ctEmployees = res.ct;
@@ -32,7 +33,7 @@ class DBSQLite{
   }
 
   async getEmployeeTS(){
-    const tss = await sqlite.open(this.dbConfig.tss);
+    const tss = await sqlite.open(global.config.sqlite.tss);
     let ts = await tss.get('SELECT max(updated_at) as updated_at from employees');
     await tss.close();
     let updated_since = ts.updated_at || new Date('2000-01-01');
@@ -44,7 +45,7 @@ class DBSQLite{
     //for some reason, if I move this to the top, Utils will be {}
     const Utils = require('../utils.js');
 
-    const punch = await sqlite3.open(this.dbConfig.punch);
+    const punch = await sqlite3.open(global.config.sqlite.punch);
     let punches = await punch.all(`SELECT * from punches WHERE state is null order by created_at limit ${global.config.sync.punchLimit}`);
     await punch.close();
 
@@ -65,7 +66,7 @@ class DBSQLite{
   }
 
   async deletePunches(pids){
-    const punch = await sqlite.open(this.dbConfig.punch);
+    const punch = await sqlite.open(global.config.sqlite.punch);
     let nSuccess = 0;
     for(let pid of pids){
       let res = await punch.run("update punches set state = 'uploaded' WHERE id = ?", [pid]);
@@ -77,7 +78,7 @@ class DBSQLite{
   }
 
   async purgePunches(){
-    const punch = await sqlite.open(this.dbConfig.punch);
+    const punch = await sqlite.open(global.config.sqlite.punch);
     let sql = `delete from punches WHERE state = 'uploaded' and (julianday('now') - julianday(updated_at)) > ${global.config.sync.punchExpiredDays}`;
     await punch.run(sql);
     await punch.close();
@@ -89,8 +90,8 @@ class DBSQLite{
     let canvas = data.photo;
     let punchId = data.id;
 
-    const tss = await sqlite3.open(this.dbConfig.tss);
-    const punch = await sqlite3.open(this.dbConfig.punch);
+    const tss = await sqlite3.open(global.config.sqlite.tss);
+    const punch = await sqlite3.open(global.config.sqlite.punch);
 
     //only local store employee can punch
     let sql = `SELECT id, empno, barcode, name, name_cn, department, active, active2 from employees WHERE store_id = ${global.config.storeId} and barcode = '${barcode}'`;
@@ -179,10 +180,11 @@ class DBSQLite{
   }
 
   async getLocalEmployees(){
-    const tss = await sqlite3.open(this.dbConfig.tss);
+    const tss = await sqlite3.open(global.config.sqlite.tss);
     let employees = await tss.all(`SELECT * from employees order by updated_at`);
     await tss.close();
 
+    let i = 0;
     for (let e of employees) {
         let pf = path.join(global.config.employeePhotoPath, e.id + ".jpg");
         try {
@@ -194,13 +196,16 @@ class DBSQLite{
         catch (ex) {
             logger.log(`cannot find ${pf}`);
         }
+        i = i + 1;
+        showMsg(`[${i}/${employees.length}] [${e.name}]`);
     }
+    showMsg("");
     return employees;
 
   }
 
   async upsertLocalEmployee(emp){
-    const tss = await sqlite3.open(this.dbConfig.tss);
+    const tss = await sqlite3.open(global.config.sqlite.tss);
     let sql = `SELECT * from employees where id = ${emp.id}`;
     let rows = await tss.all(sql);
     if (rows.length > 0) {
@@ -219,18 +224,19 @@ class DBSQLite{
   }  
 
   async getLocalPunches(){
-    const punch = await sqlite3.open(this.dbConfig.punch);
+    const punch = await sqlite3.open(global.config.sqlite.punch);
     let punches = await punch.all(`SELECT * from punches order by updated_at`);
     await punch.close();
 
     for (let p of punches) {
         if (p.photo_name) {
-            var binary = await ffs.readFile(p.photo_name);
-            p.photo = 'data:image/jpeg;base64,' + Buffer.from(binary).toString('base64');
+          showMsg(p.photo_name);
+          var binary = await ffs.readFile(p.photo_name);
+          p.photo = 'data:image/jpeg;base64,' + Buffer.from(binary).toString('base64');
         }
     }
+    showMsg("");
     return punches;
-
   }
 }
 
