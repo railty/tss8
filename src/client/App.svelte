@@ -3,8 +3,8 @@
 	import Clock from './Clock.svelte';
 	import Admin from './Admin.svelte';
 
-	//let mode = 'clock';
-	let mode = 'admin';
+	let mode = 'clock';
+	//let mode = 'admin';
 
 	let message = "";
 	async function init(){

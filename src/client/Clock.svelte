@@ -171,7 +171,7 @@
 			else {
 				////DEBUG  
 				//empno = 'EMP08226';		//active=0
-				empno = 'EMP08228';	//active=1
+				//empno = 'EMP08228';	//active=1
 
 				empno = empno.match(/EMP\d+/);
 				if ((empno) && (empno[0])) {
