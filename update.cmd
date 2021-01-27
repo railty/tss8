@@ -1,5 +1,5 @@
 git add .
 git commit -m"update"
-npm version patch
-npm run publish
+call npm version patch
+call npm run publish
 
