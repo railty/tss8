@@ -1,17 +1,26 @@
 <script>
-	import { onMount, setContext } from 'svelte';
+	import { onMount,  } from 'svelte';
 	import Clock from './Clock.svelte';
 	import Admin from './Admin.svelte';
+	import SwapText from './SwapText.svelte';
 
 	let mode = 'clock';
 	//let mode = 'admin';
 
 	let message = "";
+	let updates;
 	async function init(){
 		globalThis.config = await electronSvr.getConfig();
 		
 		electronSvr.setupListener((msg)=>{
-			message = msg;
+			if (typeof msg == "string") {
+				message = msg;
+			}
+			else if (typeof msg == "object") {
+				if (msg.type=='update'){
+					updates = msg.messages;
+				}
+			}
 		});
 	}
 	async function initDebug(){
@@ -49,8 +58,8 @@
 			<div class="px-4 border-l-2 flex-grow">{message}</div>
 			<div class="px-4 border-l-2" id='status'></div>
 			<div class="px-4 border-l-2" id="db"></div>
-			<div class="px-4 border-l-2" id="ips"></div>
-			<div class="px-4 border-l-2" id="version">{globalThis.config ? globalThis.config.version : "waiting"}</div>
+			<div class="px-4 border-l-2"><SwapText texts={updates}/></div>
+			<div class="px-4 border-l-2">{globalThis.config ? globalThis.config.version : "waiting"}</div>
 		</footer>
 	{/await}
 </div>

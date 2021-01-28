@@ -3,6 +3,7 @@ const path = require('path');
 const logger = require('electron-log');
 const ffs = require('final-fs');
 const isDev = require('electron-is-dev');
+const { showMsg } = require('./utils');
  
 function detectEnv(){
   logger.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -82,7 +83,8 @@ async function init(){
 init();
 
 require('update-electron-app')({
-  updateInterval: '1 hour',
+  //updateInterval: '1 hour',
+  updateInterval: '10 minutes',
   notifyUser: false,
   logger: logger
 });
@@ -93,17 +95,10 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 }
 
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-  const dialogOpts = {
-    type: 'info',
-    buttons: ['Restart', 'Later'],
-    title: 'Application Update',
-    message: process.platform === 'win32' ? releaseNotes : releaseName,
-    detail: 'A new version has been downloaded. Restart the application to apply the updates.'
-  }
-
-  dialog.showMessageBox(dialogOpts).then((returnValue) => {
-    if (returnValue.response === 0) autoUpdater.quitAndInstall()
-  })
+  showMsg({
+    type: 'update',
+    messages: ['Reboot', '重启']
+  });
 })
 
 
@@ -112,7 +107,7 @@ const createWindow = () => {
 
   let options = {
     alwaysOnTop: false,
-    frame: true,
+    frame: isDev,
     fullscreen: !isDev,
     fullscreenable: true,
     transparent: false,

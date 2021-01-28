@@ -1,7 +1,8 @@
 <script>
-	import { onMount, onDestroy, getContext } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import uuidv4 from 'uuid/v4';
 	import { savePunch } from "./fb.js";
+	import SwapText from './SwapText.svelte';
 
 	export let mode;
 	let cameraWidth = 240;
@@ -37,7 +38,6 @@
 				warnings = ['Account Disabled', '此卡无效'];
 			}
 
-
 			if (last_timer != 0) {
 				clearTimeout(last_timer);
 				last_timer = 0;
@@ -54,11 +54,13 @@
 			}, timeOut);
 		
 			//save to fb
-			punch.employee_id = employee.id;
-			punch.action = employee.action;
-			punch.store_id = globalThis.config.storeId;
-			punch.hostname = globalThis.config.hostname;
-			await savePunch(punch);
+			if (employee.active != 0){
+				punch.employee_id = employee.id;
+				punch.action = employee.action;
+				punch.store_id = globalThis.config.storeId;
+				punch.hostname = globalThis.config.hostname;
+				await savePunch(punch);
+			}
 		}
 	}
 
@@ -198,19 +200,6 @@
 			strTime = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
 		}
 		if (barcode) barcode.focus();
-		
-		swapTexts();
-	}
-
-	let first = true;
-	function swapTexts(){
-		first = !first;
-
-		warnings = warnings;
-	}
-	function swapText(ts){
-		if (first) return ts[0];
-		return ts[1];
 	}
 </script>
 
@@ -231,7 +220,7 @@
 		<div class="flex-grow flex flex-col justify-center items-center">
 			{#if warnings}
 				<div class="flex justify-center content-center font-bold text-6xl bg-yellow-200 text-red-600 mt-10">
-					{swapText(warnings)}
+					<SwapText texts={warnings} />
 				</div>
 			{/if}
 			<video bind:this={video} style="position:absolute;z-index:1};" controls autoplay>
