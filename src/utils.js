@@ -8,7 +8,7 @@ exports.showMsg = (msg) => {
     global.mainWindow.webContents.send('message', msg);
 }
 
-exports.copyIfNotExists = async (src, dest) => {
+const copyIfNotExists = async (src, dest) => {
     try{
         let bExist = await ffs.exists(dest);
         if (!bExist) {
@@ -20,8 +20,9 @@ exports.copyIfNotExists = async (src, dest) => {
         logger.info(ex.toString());
     }
 }
-  
-exports.mkdirIfNotExists = async (fd) => {
+exports.copyIfNotExists = copyIfNotExists;
+
+const mkdirIfNotExists = async (fd) => {
     try{
       let bExist = await ffs.exists(fd);
       if (bExist) {
@@ -36,7 +37,8 @@ exports.mkdirIfNotExists = async (fd) => {
       logger.info(ex.toString());
     }
 }
-  
+exports.mkdirIfNotExists = mkdirIfNotExists;
+
 exports.detectEnv = () => {
     logger.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     //exec and app
@@ -55,42 +57,48 @@ exports.detectEnv = () => {
     logger.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
   }
   
-  exports.loadConfig = () => {
+  exports.loadConfig = async (appPath, configPath) => {
+    let configFile = path.join(configPath, "config.json");
+    await copyIfNotExists(path.join(appPath, "data.template/config.json"), configFile);  
 
-    let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
-    let config = require(path.join(configPath, "config.json"));
+    let config = require(configFile);
+    //the default data path is same as config path, in roaming user profile, but can be override
 
     if (!config.dataPath) config.dataPath = configPath;
 
-    config.employeePhotoPath = path.join(config.dataPath, "data/employees/");
-    config.cameraPath = path.join(config.dataPath, "data/camera/");
-    
+    config = {...config, ...{
+      appPath: appPath,
+      employeePhotoPath: path.join(config.dataPath, "data/employees/"),
+      cameraPath: path.join(config.dataPath, "data/camera/"),
+      version: app ? app.getVersion() : process.env['npm_package_version']  //electron or jest
+    }};
+
     config.sqlite = {
         tss: path.join(config.dataPath, "data/tss.sqlite"),
         punch: path.join(config.dataPath, "data/punch.sqlite")
     };
     
     return config;
-}
+  }
 
-exports.getPunchAction2 = async (dbPunch, startHour) => {
-  let tm = new Date();
-  let dayStart = new Date(tm.getTime()); //make a copy of tm
-  dayStart.setHours(startHour);
-  dayStart.setMinutes(0);
-  dayStart.setSeconds(0);
-  dayStart.setMilliseconds(0);
-  dayStart = moment(dayStart).utc().format("YYYY-MM-DDTHH:mm:ss");
-  tm = moment(tm).utc().format("YYYY-MM-DDTHH:mm:ss");
+  exports.getPunchAction = async (dbPunch, startHour) => {
+    let tm = new Date();
+    let dayStart = new Date(tm.getTime()); //make a copy of tm
+    dayStart.setHours(startHour);
+    dayStart.setMinutes(0);
+    dayStart.setSeconds(0);
+    dayStart.setMilliseconds(0);
+    dayStart = moment(dayStart).utc().format("YYYY-MM-DDTHH:mm:ss");
+    tm = moment(tm).utc().format("YYYY-MM-DDTHH:mm:ss");
 
-  let sql = `SELECT * from punches WHERE employee_id = 99999 and time >= '${dayStart}' and time < '${tm}' order by time desc limit 1`;
-  console.log(sql);
-  const last_punches = await dbPunch.all(sql);
+    let sql = `SELECT * from punches WHERE employee_id = 99999 and time >= '${dayStart}' and time < '${tm}' order by time desc limit 1`;
+    console.log(sql);
+    const last_punches = await dbPunch.all(sql);
 
-  let punchAction;
-  if (last_punches.length == 0) //first punch of the day
-    punchAction = 'checkin'
-  else
-    punchAction = (last_punches[0].action == 'checkin') ? 'checkout' : 'checkin';
-  return punchAction;
-}
+    let punchAction;
+    if (last_punches.length == 0) //first punch of the day
+      punchAction = 'checkin'
+    else
+      punchAction = (last_punches[0].action == 'checkin') ? 'checkout' : 'checkin';
+    return punchAction;
+  }

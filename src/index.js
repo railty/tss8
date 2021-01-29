@@ -3,7 +3,7 @@ const path = require('path');
 const logger = require('electron-log');
 const ffs = require('final-fs');
 const isDev = require('electron-is-dev');
-const { showMsg, copyIfNotExists, mkdirIfNotExists, detectEnv } = require('./utils');
+const { showMsg, copyIfNotExists, mkdirIfNotExists, detectEnv, loadConfig } = require('./utils');
  
 if (isDev){
   app.commandLine.appendSwitch('remote-debugging-port', '8315')
@@ -12,28 +12,10 @@ if (isDev){
 detectEnv();
 
 async function init(){
-  //this is the deliveried app path
   let appPath = app.getAppPath();
-  
-  //config.json is always in userData folder
   let configPath = app.getPath('userData');
-  let fConfig = path.join(configPath, "config.json");
 
-  //if not exist, copy from app folder template
-  await copyIfNotExists(path.join(appPath, "data.template/config.json"), fConfig);  
-
-  //load config
-  global.config = require(fConfig);
-
-  //the default data path is same as config path, in roaming user profile, but can be override
-  if (!global.config.dataPath){
-    global.config.dataPath = configPath;
-  }
-
-  global.config = {...global.config, ...{
-    appPath: appPath,
-    version: app.getVersion()
-  }};
+  global.config = await loadConfig(appPath, configPath);
 
   for (let fd of ['data/', 'data/employees/', 'data/camera/']) {
     await mkdirIfNotExists(path.join(global.config.dataPath, fd));  
@@ -47,14 +29,6 @@ async function init(){
   ]) {
     await copyIfNotExists(path.join(global.config.appPath, f.src), path.join(global.config.dataPath, f.dest));   
   }
-
-  global.config.sqlite = {
-    tss: path.join(global.config.dataPath, "data/tss.sqlite"),
-    punch: path.join(global.config.dataPath, "data/punch.sqlite")
-  };
-
-  global.config.employeePhotoPath = path.join(global.config.dataPath, "data/employees/");
-  global.config.cameraPath = path.join(global.config.dataPath, "data/camera/");
 }
 
 init();

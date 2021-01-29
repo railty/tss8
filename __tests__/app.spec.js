@@ -37,7 +37,11 @@ beforeAll(async () => {
     let pages = await browser.pages()
     page = pages[0];
 
-    config = loadConfig();
+
+    let appPath = process.cwd();
+    let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
+
+    config = await loadConfig(appPath, configPath);
     dbPunch = await sqlite3.open(config.sqlite.punch);
 
     let sql = 'delete from punches WHERE employee_id in (99998, 99999)';
@@ -117,7 +121,8 @@ test("punch inactive card", async () => {
 });
 
 test("punch active card", async () => {
-    try{
+    try
+        {
         //await page.emulateTimezone('America/Vancouver');
 
         let res;
@@ -135,7 +140,7 @@ test("punch active card", async () => {
                 return [ici.src, ico.src, nci.textContent, nco.textContent];
             });
         }
-        await page.waitForTimeout(50);
+        await page.waitForTimeout(1000);
         res = await getInfo();
 
         assert(res[0].endsWith("enter.jpg"));
@@ -149,8 +154,9 @@ test("punch active card", async () => {
         await page.keyboard.type(barcode);
         await page.keyboard.press('Enter');
 
-        await page.waitForTimeout(50);
+        await page.waitForTimeout(1000);
         res = await getInfo();
+
         assert(res[0].endsWith("99999.jpg"));
         assert(res[1].endsWith("exit.jpg"));
         assert(res[2]=='Test');        

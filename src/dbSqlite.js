@@ -209,12 +209,12 @@ class DBSQLite{
     let sql = `SELECT * from employees where id = ${emp.id}`;
     let rows = await tss.all(sql);
     if (rows.length > 0) {
-        console.log(`update ${emp.id} ${emp.updated_at}`);
+        showMsg(`update ${emp.id} ${emp.updated_at}`);
         let res = await tss.run('update employees set store_id = ?, empno = ?, barcode = ?, name = ?, name_cn = ?, department = ?, active = ?, active2 = ?, created_at = ?, updated_at = ? where id = ?', [emp.store_id, emp.empno, emp.barcode, emp.name, emp.name_cn, emp.department, emp.active, emp.active2, emp.created_at, emp.updated_at, emp.id]);
         //console.log(res);
     }
     else {
-        console.log(`insert ${emp.id} ${emp.updated_at}`);
+        showMsg(`insert ${emp.id} ${emp.updated_at}`);
         let res = await tss.run('insert into employees(store_id, id, empno, barcode, name, name_cn, department, active, active2, created_at, updated_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [emp.store_id, emp.id, emp.empno, emp.barcode, emp.name, emp.name_cn, emp.department, emp.active, emp.active2, emp.created_at, emp.updated_at]);
         //console.log(res);
     }

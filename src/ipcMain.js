@@ -66,7 +66,7 @@ module.exports = function () {
                         let srcF = path.join(src, f);
                         let destF = path.join(global.config.employeePhotoPath, f);
 
-                        let bExist = await ffs.exists(srcF, destF);
+                        let bExist = await ffs.exists(destF);
                         if (!bExist){
                             showMsg(`[${i}/${srcFs.length}] copying ${srcF} to ${destF}`);
                             await ffs.copy(srcF, destF);
