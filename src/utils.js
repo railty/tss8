@@ -73,7 +73,7 @@ exports.detectEnv = () => {
     return config;
 }
 
-exports.getPunchAction = async (dbPunch, startHour) => {
+exports.getPunchAction2 = async (dbPunch, startHour) => {
   let tm = new Date();
   let dayStart = new Date(tm.getTime()); //make a copy of tm
   dayStart.setHours(startHour);

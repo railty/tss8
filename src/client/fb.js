@@ -7,15 +7,15 @@ export async function savePunch(punch) {
     await punchRef.set(data);
 
     let storageRef = filebaseStorage.ref();
-    let cameraRef = storageRef.child(`camera/${punch.id}.jpg`);
+    let cameraRef = storageRef.child(`camera/${punch.id}.jpeg`);
 
     let ref = await cameraRef.putString(photo, 'data_url');
     let url = await ref.ref.getDownloadURL();
-    console.log(`camera/${punch.id}.jpg`);
-    console.log(url);
+    //console.log(`camera/${punch.id}.jpeg`);
+    //console.log(url);
 
     await punchRef.update({
-        url: url
+        photo_url: url
     })
 }
 

@@ -3,8 +3,20 @@ const fetch = require('node-fetch');
 const assert = require('assert').strict;
 const path = require('path');
 const sqlite3 = require('sqlite-async');
+const ffs = require('final-fs');
+const admin = require("firebase-admin");
 
-const { loadConfig, getPunchAction } = require('../src/utils');
+let serviceAccount = require("../tss7-firebase-adminsdk.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: "tss7-c74db.appspot.com"
+});
+let bucket = admin.storage().bucket();
+let firebaseDb = admin.firestore();
+
+const { loadConfig } = require('../src/utils');
+const { fileNameFilterStripRegExp } = require('final-fs');
+const { match } = require('assert');
 
 let browser;
 let page;
@@ -27,6 +39,15 @@ beforeAll(async () => {
 
     config = loadConfig();
     dbPunch = await sqlite3.open(config.sqlite.punch);
+
+    let sql = 'delete from punches WHERE employee_id in (99998, 99999)';
+    await dbPunch.run(sql);
+
+    
+    let punchesSnapshot = await firebaseDb.collection("stores").doc('999').collection("employees").doc('99999').collection("punches").get();
+    for (let doc of punchesSnapshot.docs) {
+        await doc.ref.delete();
+    };
 });
 
 test("start and switch to admn", async () => {
@@ -45,7 +66,6 @@ test("start and switch to admn", async () => {
 
         let tm = await page.$("#time");
         const strTime1 = await page.evaluate(element => element.textContent, tm);
-        console.log(strTime1)
 
         await page.keyboard.type("admin@@@");
         await page.keyboard.press('Enter');
@@ -77,52 +97,51 @@ test("punch inactive card", async () => {
 
         let warnings = await page.$('#warnings');
         let strText = await page.evaluate(element => element.textContent, warnings);
-        assert(strText == 'Account Disabled');
+        assert(strText == 'Account Disabled' || strText == '此卡无效');
 
         await page.waitForTimeout(1111);
         strText = await page.evaluate(element => element.textContent, warnings);
-        assert(strText == '此卡无效');
+        assert(strText == 'Account Disabled' || strText == '此卡无效');
 
         await page.waitForTimeout(1111);
         strText = await page.evaluate(element => element.textContent, warnings);
-        assert(strText == 'Account Disabled');
+        assert(strText == 'Account Disabled' || strText == '此卡无效');
 
-        barcode = "EMP99999999";
-        await page.keyboard.type(barcode);
-        await page.keyboard.press('Enter');
-
+        let input = await page.$("input");
+        assert.equal(input, null);
+        await page.waitForTimeout(config.warningCanvasTimeout);
     }
     catch(ex){
         console.log(ex.toString());
     }
 });
 
-test.only("punch active card", async () => {
+test("punch active card", async () => {
     try{
-        let action = await getPunchAction(dbPunch, config.startHour);
-console.log(action);
+        //await page.emulateTimezone('America/Vancouver');
+
+        let res;
 
         let barcode = "EMP99999999";
         await page.keyboard.type(barcode);
         await page.keyboard.press('Enter');
-        
-        let checkin_photo, checkout_photo, checkin_name, checkout_name;
-        checkin_photo = await page.$("img[aria-label='checkin_photo']");
-        checkin_photo = await page.evaluate(element => element.src, checkin_photo);
 
-        checkout_photo = await page.$("img[aria-label='checkout_photo']");
-        checkout_photo = await page.evaluate(element => element.src, checkout_photo);
+        async function getInfo(){
+            return await page.evaluate((aria) => {
+                let ici = document.querySelector("img[aria-label='checkin_photo']");
+                let ico = document.querySelector("img[aria-label='checkout_photo']");
+                let nci = document.querySelector("div[aria-label='checkin_name']");
+                let nco = document.querySelector("div[aria-label='checkout_name']");
+                return [ici.src, ico.src, nci.textContent, nco.textContent];
+            });
+        }
+        await page.waitForTimeout(50);
+        res = await getInfo();
 
-        checkin_name = await page.$("div[aria-label='checkin_name']");
-        checkin_name = await page.evaluate(element => element.textContent, checkin_name);
-
-        checkout_name = await page.$("div[aria-label='checkout_name']");
-        checkout_name = await page.evaluate(element => element.textContent, checkout_name);
-
-        console.log(checkin_name);
-        console.log(checkout_name);
-        console.log(checkout_name);
-        console.log(checkout_photo);
+        assert(res[0].endsWith("enter.jpg"));
+        assert(res[1].endsWith("99999.jpg"));
+        assert(res[2]=='');
+        assert(res[3]=='Test');
 
         await page.waitForTimeout(5000);
 
@@ -130,22 +149,95 @@ console.log(action);
         await page.keyboard.type(barcode);
         await page.keyboard.press('Enter');
 
-        checkin_photo = await page.$("img[aria-label='checkin_photo']");
-        checkin_photo = await page.evaluate(element => element.src, checkin_photo);
+        await page.waitForTimeout(50);
+        res = await getInfo();
+        assert(res[0].endsWith("99999.jpg"));
+        assert(res[1].endsWith("exit.jpg"));
+        assert(res[2]=='Test');        
+        assert(res[3]=='');
 
-        checkout_photo = await page.$("img[aria-label='checkout_photo']");
-        checkout_photo = await page.evaluate(element => element.src, checkout_photo);
+        function roundToSeconds(seconds){
+            return new Date(Math.floor(seconds/1000)*1000);
+        }
 
-        checkin_name = await page.$("div[aria-label='checkin_name']");
-        checkin_name = await page.evaluate(element => element.textContent, checkin_name);
+        let sql = `SELECT * from punches WHERE employee_id = 99999 order by time`;
+        let punches = await dbPunch.all(sql);
+        punches = punches.map((p)=>{
+            //time from sqlite3 is utc time but no time zone, ie, ''2021-01-29T15:52:28', add '.000Z' to let js know it is utc not local time
+            p.time = p.time +".000Z";
+            p.created_at = p.created_at +".000Z";
+            p.updated_at = p.updated_at +".000Z";
 
-        checkout_name = await page.$("div[aria-label='checkout_name']");
-        checkout_name = await page.evaluate(element => element.textContent, checkout_name);
+            //round to seconds
+            p.time = roundToSeconds(Date.parse(p.time));
+            p.created_at = roundToSeconds(Date.parse(p.created_at));
+            p.updated_at = roundToSeconds(Date.parse(p.updated_at));
 
-        console.log(checkin_name);
-        console.log(checkout_name);
-        console.log(checkout_name);
-        console.log(checkout_photo);
+            //take out the prototype function staff so I can do a deep compare
+            let {action, time, created_at, updated_at, employee_id, id, node, photo_name, store} = {...p};
+            return {action, time, created_at, updated_at, employee_id, id, node, photo_name, store};
+        });
+        //console.log(punches);
+
+        assert(punches.length == 2);
+        assert(punches[0].action == "checkin");
+        assert(punches[1].action == "checkout");
+        assert.equal(config.cameraPath + punches[0].id + ".jpeg", punches[0].photo_name);
+        assert.equal(config.cameraPath + punches[1].id + ".jpeg", punches[1].photo_name);
+
+        assert(await ffs.exists(punches[1].photo_name));
+        assert(await ffs.exists(punches[1].photo_name));
+
+        /*
+        let files = await bucket.getFiles({
+            prefix: 'camera/'
+        });
+        files = files[0].map((f)=>{
+            return f.name;
+        });
+        */
+
+        //let firebase do its thing
+        await page.waitForTimeout(5000);
+
+        let file0 = bucket.file(`camera/${punches[0].id}.jpeg`);
+        assert(await file0.exists());
+        
+        let file1 = bucket.file(`camera/${punches[1].id}.jpeg`);
+        assert(await file1.exists());
+
+        let punchesSnapshot = await firebaseDb.collection("stores").doc('999').collection("employees").doc('99999').collection("punches").get();
+        let firePunches = punchesSnapshot.docs.map((p)=>{
+            p = p.data();
+
+            //the time canot be exactly same so round to 1 second
+            // the time in sqlite is database write time
+            // the time in firebase is client time, ie, created_at = updated_at = time
+            p.created_at = roundToSeconds(p.created_at.toDate().getTime());
+            p.updated_at = roundToSeconds(p.updated_at.toDate().getTime());
+            p.time = roundToSeconds(p.time.toDate().getTime());
+
+            p.photo_filename = decodeURIComponent(p.photo_url);
+            p.photo_filename = p.photo_filename.replace(/^.*[\\\/]/, '').replace(/\?(.*)$/, '');
+            delete p.photo_url;
+
+            delete p.empno;
+            delete p.store_id;
+
+            let {action, time, created_at, updated_at, employee_id, id, node, photo_filename, store} = {...p};
+            return {action, time, created_at, updated_at, employee_id, id, node, photo_filename, store};
+        }).sort((a, b)=>{
+            return a.time-b.time;
+        });
+
+        punches = punches.map((p)=>{
+            p.photo_filename = p.photo_name.replace(/^.*[\\\/]/, '');
+            delete p.photo_name;
+            return p;
+        });
+
+        //same reason, re-construct 2 array to be clear, to avoid some prototype thing to make compare fails
+        assert.deepEqual([...punches], [...firePunches]);
     }
     catch(ex){
         console.log(ex.toString());

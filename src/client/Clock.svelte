@@ -58,7 +58,10 @@
 				punch.employee_id = employee.id;
 				punch.action = employee.action;
 				punch.store_id = globalThis.config.storeId;
-				punch.hostname = globalThis.config.hostname;
+				punch.store = globalThis.config.store;
+				punch.node = globalThis.config.hostname;
+				punch.created_at = punch.time;
+				punch.updated_at = punch.time;
 				await savePunch(punch);
 			}
 		}
