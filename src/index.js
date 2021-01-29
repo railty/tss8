@@ -3,81 +3,58 @@ const path = require('path');
 const logger = require('electron-log');
 const ffs = require('final-fs');
 const isDev = require('electron-is-dev');
-const { showMsg } = require('./utils');
+const { showMsg, copyIfNotExists, mkdirIfNotExists, detectEnv } = require('./utils');
  
-function detectEnv(){
-  logger.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-  //exec and app
-  logger.log("app.getAppPath()=", app.getAppPath());
-  //config data
-  logger.log("app.getPath('userData')=", app.getPath('userData'));
-
-  logger.log("app.getPath('appData')=", app.getPath('appData'));
-  logger.log("app.getPath('logs')=", app.getPath('logs'));
-  logger.log("app.getPath('exe')=", app.getPath('exe'));
-  logger.log("process.execPath=", process.execPath);
-  logger.log("process.resourcesPath=", process.resourcesPath);
-  logger.log("__dirname=", __dirname);
-  logger.log("process.env.npm_package_version: " + process.env.npm_package_version);
-  logger.log("app.getVersion()=" + app.getVersion());
-  logger.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+if (isDev){
+  app.commandLine.appendSwitch('remote-debugging-port', '8315')
 }
 
 detectEnv();
 
-async function initFile(f){
-  f.src = path.join(app.getAppPath(), f.src);
-  f.dest = path.join(app.getPath('userData'), f.dest);
-
-  try{
-    let bExist = await ffs.exists(f.dest);
-    if (!bExist) {
-      await ffs.copy( f.src, f.dest );
-    }
-  }
-  catch(ex){
-    logger.info(ex.toString());
-  }
-}
-
-async function initFolder(fd){
-  logger.info("checking " + fd);
-  fd = path.join(app.getPath('userData'), fd);
-  try{
-    let bExist = await ffs.exists(fd);
-    if (bExist) {
-      logger.info("skip creating " + fd);
-    }
-    else{
-      logger.info("creating " + fd);
-      await ffs.mkdir(fd);
-    }
-  }
-  catch(ex){
-    logger.info(ex.toString());
-  }
-}
-
 async function init(){
-  for (let fd of ['db/', 'db/employees/', 'db/camera/']) await initFolder(fd);  
-  for (let f of [
-    {src: 'src/config.json.template', dest: 'config.json'}, 
-    {src: 'src/tss.sqlite.template', dest: 'db/tss.sqlite'}, 
-    {src: 'src/punch.sqlite.template', dest: 'db/punch.sqlite'}
-  ]) await initFile(f);  
+  //this is the deliveried app path
+  let appPath = app.getAppPath();
+  
+  //config.json is always in userData folder
+  let configPath = app.getPath('userData');
+  let fConfig = path.join(configPath, "config.json");
 
-  global.config = require(path.join(app.getPath('userData'), "config.json"));
+  //if not exist, copy from app folder template
+  await copyIfNotExists(path.join(appPath, "data.template/config.json"), fConfig);  
+
+  //load config
+  global.config = require(fConfig);
+
+  //the default data path is same as config path, in roaming user profile, but can be override
+  if (!global.config.dataPath){
+    global.config.dataPath = configPath;
+  }
+
   global.config = {...global.config, ...{
-    appPath: app.getAppPath(),
-    userDataPath: app.getPath('userData'),
+    appPath: appPath,
     version: app.getVersion()
   }};
 
-  global.config.sqlite.tss = path.join(global.config.userDataPath, "db/tss.sqlite");
-  global.config.sqlite.punch = path.join(global.config.userDataPath, "db/punch.sqlite");
+  for (let fd of ['data/', 'data/employees/', 'data/camera/']) {
+    await mkdirIfNotExists(path.join(global.config.dataPath, fd));  
+  }
 
-  global.config.employeePhotoPath = path.join(global.config.userDataPath, "db/employees/");
-  global.config.cameraPath = path.join(global.config.userDataPath, "db/camera/");
+  for (let f of [
+    {src: 'data.template/tss.sqlite', dest: 'data/tss.sqlite'}, 
+    {src: 'data.template/punch.sqlite', dest: 'data/punch.sqlite'},
+    {src: 'data.template/employees/99998.jpg', dest: 'data/employees/99998.jpg'},
+    {src: 'data.template/employees/99999.jpg', dest: 'data/employees/99999.jpg'}
+  ]) {
+    await copyIfNotExists(path.join(global.config.appPath, f.src), path.join(global.config.dataPath, f.dest));   
+  }
+
+  global.config.sqlite = {
+    tss: path.join(global.config.dataPath, "data/tss.sqlite"),
+    punch: path.join(global.config.dataPath, "data/punch.sqlite")
+  };
+
+  global.config.employeePhotoPath = path.join(global.config.dataPath, "data/employees/");
+  global.config.cameraPath = path.join(global.config.dataPath, "data/camera/");
 }
 
 init();

@@ -66,5 +66,9 @@
     "svelte": "^3.0.0",
     "svelte-preprocess": "^4.6.1",
     "tailwindcss": "^2.0.2"
+  },
+  "jest": {
+    "verbose": true,
+    "testTimeout": 60000
   }
 }

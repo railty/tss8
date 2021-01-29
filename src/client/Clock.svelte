@@ -205,7 +205,7 @@
 
 <div class="flex flex-grow flex-col">
 	<header class="flex">
-		<div class="flex justify-center w-1/4 text-5xl" id="store">HQ</div>
+		<div class="flex justify-center w-1/4 text-5xl" id="store">{globalThis.config ? globalThis.config.store : ''}</div>
 		<div class="flex-grow">
 			<section class="flex justify-center font-bold text-7xl text-red-600" id="time">{strTime}</section>
 		</div>
@@ -213,13 +213,13 @@
 	</header>
 	<main class="flex flex-grow">
 		<div class="flex flex-col justify-center items-center" style="width:240px">
-			<img class="rounded-md" src={checkin_photo} alt="" />
-			<div class="text-3xl">{checkin_name}</div>
+			<img aria-label='checkin_photo' class="rounded-md" src={checkin_photo} alt="" />
+			<div aria-label='checkin_name' class="text-3xl">{checkin_name}</div>
 		</div>
 		
 		<div class="flex-grow flex flex-col justify-center items-center">
 			{#if warnings}
-				<div class="flex justify-center content-center font-bold text-6xl bg-yellow-200 text-red-600 mt-10">
+				<div id="warnings" class="flex justify-center content-center font-bold text-6xl bg-yellow-200 text-red-600 mt-10">
 					<SwapText texts={warnings} />
 				</div>
 			{/if}
@@ -228,12 +228,14 @@
 			</video>
 			<canvas bind:this={canvas} style="position:absolute;z-index:2};"></canvas>
 			<div class="flex-grow" id="place holder fillup"></div>
-			<input class="w-full md:w-1/2 bg-blue-200 rounded-md" type="password" bind:this={barcode} on:keypress={keypress}>
+			{#if !warnings}
+				<input id="barcode" class="w-full md:w-1/2 bg-blue-200 rounded-md" type="password" bind:this={barcode} on:keypress={keypress}>
+			{/if}
 		</div>
 		
 		<div class="flex flex-col justify-center items-center" style="width:240px">
-			<img class="rounded-md" src={checkout_photo} alt="">
-			<div class="text-3xl">{checkout_name}</div>
+			<img aria-label='checkout_photo' class="rounded-md" src={checkout_photo} alt="">
+			<div aria-label='checkout_name' class="text-3xl">{checkout_name}</div>
 		</div>
 	</main>
 </div>

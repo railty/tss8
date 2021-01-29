@@ -40,7 +40,7 @@
 			  Heroicon name: menu
 			  Menu open: "hidden", Menu closed: "block"
 			-->
-			<svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+			<svg aria-label="hamburger" class={popup ? 'hidden h-6 w-6' : 'block h-6 w-6'} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
 			  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
 			</svg>
 			<!-- Icon when menu is open. -->
@@ -49,14 +49,14 @@
   
 			  Menu open: "block", Menu closed: "hidden"
 			-->
-			<svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+			<svg aria-label="close" class={popup ? 'block h-6 w-6' : 'hidden h-6 w-6'} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
 			  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 			</svg>
 		  </button>
 		</div>
 		<div class="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
 		  <div class="flex-shrink-0 flex items-center">
-			<svg class="w-10 h-10" fill="none" stroke="green" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+			<svg aria-label="clock" class="w-10 h-10" fill="none" stroke="green" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
 		  </div>
 		  <div class="hidden sm:block sm:ml-6">
 			<div class="flex space-x-4">
@@ -68,9 +68,9 @@
 		</div>
 
 		<div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-		  <button on:click={logout} class="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+		  <button id="exit" on:click={logout} class="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
 			<span class="sr-only">Logout</span>
-			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+			<svg aria-label="exit" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
 		  </button>
 		</div>
 	  </div>
@@ -81,7 +81,7 @@
   
 	  Menu open: "block", Menu closed: "hidden"
 	-->
-	<div class={popup ? '' : "hidden sm:hidden"} >
+	<div class={popup ? 'block' : "hidden sm:hidden"} >
 	  <div class="px-2 pt-2 pb-3 space-y-1">
 		{#each menus as m}
 			<a href="##" on:click={ ()=>{ menu = m.menu } } class={(menu=='{m.menu}' ? activeMenuClass : menuClass) + "block text-base"}>{m.label}</a>

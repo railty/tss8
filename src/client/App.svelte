@@ -59,7 +59,7 @@
 			<div class="px-4 border-l-2" id='status'></div>
 			<div class="px-4 border-l-2" id="db"></div>
 			<div class="px-4 border-l-2"><SwapText texts={updates}/></div>
-			<div class="px-4 border-l-2">{globalThis.config ? globalThis.config.version : "waiting"}</div>
+			<div id="version" class="px-4 border-l-2">{globalThis.config ? globalThis.config.version : "waiting"}</div>
 		</footer>
 	{/await}
 </div>

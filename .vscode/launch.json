@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
       {
+        "name": "test",
+        "request": "launch",
+        "runtimeArgs": [
+          "run-script",
+          "test"
+        ],
+        "runtimeExecutable": "npm",
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "type": "pwa-node"
+      },
+      {
         "name": "publish",
         "request": "launch",
         "runtimeArgs": [
@@ -18,7 +31,7 @@
         "type": "pwa-node"
       },
       {
-          "name": "Debug Main Process",
+          "name": "Main",
           "type": "node",
           "request": "launch",
           "cwd": "${workspaceFolder}",
