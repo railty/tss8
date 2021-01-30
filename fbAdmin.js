@@ -1,6 +1,6 @@
-var admin = require("firebase-admin");
+const admin = require("firebase-admin");
 
-var serviceAccount = require("./tss7-firebase-adminsdk.json");
+const serviceAccount = require("./tss7-firebase-adminsdk.json");
 
 let app = admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -8,6 +8,8 @@ let app = admin.initializeApp({
   databaseURL: 'https://tss7-c74db.firebaseio.com'
 });
 
+const mysql = require('mysql2/promise');
+  
 async function storage(){
     let bucket = admin.storage().bucket();
 
@@ -43,5 +45,27 @@ async function cloudStore(){
     };
 
 }
+//storage();
+//cloudStore();
 
-cloudStore();
+
+
+async function test_mysql(){
+    const connection = await mysql.createConnection({
+        host     : 'localhost',
+        user     : 'fish',
+        password : 'fisher',
+        database : 'fish'
+    });
+    
+    // query database
+    const [rows, fields] = await connection.execute('SELECT * FROM `t_users` WHERE `name` like ? AND `coins` = ?', ['D%', 1000]);
+    //console.log(rows);
+    //console.log(fields);
+
+    let res = await connection.execute('update `t_users` set name = ? WHERE `userid` = ?', ['aaa', 362]);
+
+    await connection.end()
+}
+
+test_mysql();
