@@ -18,7 +18,8 @@
     "watch:svelte": "rollup -c -w",
     "build:svelte": "rollup -c",
     "test": "jest",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "sync": "node sync.js"
   },
   "keywords": [],
   "author": {

@@ -62,6 +62,7 @@
 				punch.node = globalThis.config.hostname;
 				punch.created_at = punch.time;
 				punch.updated_at = punch.time;
+				punch.state = "created";
 				await savePunch(punch);
 			}
 		}

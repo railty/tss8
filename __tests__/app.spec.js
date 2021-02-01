@@ -15,8 +15,6 @@ let bucket = admin.storage().bucket();
 let firebaseDb = admin.firestore();
 
 const { loadConfig } = require('../src/utils');
-const { fileNameFilterStripRegExp } = require('final-fs');
-const { match } = require('assert');
 
 let browser;
 let page;
@@ -121,7 +119,7 @@ test("punch inactive card", async () => {
 });
 
 test("punch active card", async () => {
-    try
+    //try
         {
         //await page.emulateTimezone('America/Vancouver');
 
@@ -157,6 +155,7 @@ test("punch active card", async () => {
         await page.waitForTimeout(1000);
         res = await getInfo();
 
+        console.log(res);
         assert(res[0].endsWith("99999.jpg"));
         assert(res[1].endsWith("exit.jpg"));
         assert(res[2]=='Test');        
@@ -245,9 +244,7 @@ test("punch active card", async () => {
         //same reason, re-construct 2 array to be clear, to avoid some prototype thing to make compare fails
         assert.deepEqual([...punches], [...firePunches]);
     }
-    catch(ex){
-        console.log(ex.toString());
-    }
+    //catch(ex){console.log(ex.toString());}
 });
 
 afterAll(async () => {

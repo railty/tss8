@@ -6,11 +6,5 @@
     "canvasTimeout": 3000,
     "warningCanvasTimeout": 10000,
     "refreshTimeout": 1000,
-    "startHour": 6,
-    "mysql": {
-        "host": "192.168.168.226",
-        "user": "111",
-        "password": "xxx",
-        "database": "tss"
-    }
+    "startHour": 6
 }

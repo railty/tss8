@@ -94,4 +94,6 @@ public/camera/
 employees/
 camera/
 forge.js
+sync.json
 tss7-firebase-adminsdk.json
+public/fbStart.js

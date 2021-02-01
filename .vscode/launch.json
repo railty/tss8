@@ -5,12 +5,13 @@
     "version": "0.2.0",
     "configurations": [
       {
-        "name": "fbAdmin",
+        "name": "sync",
         "request": "launch",
         "runtimeArgs": [
-          "fbAdmin.js",
+          "run-script",
+          "sync"
         ],
-        "runtimeExecutable": "node",
+        "runtimeExecutable": "npm",
         "skipFiles": [
           "<node_internals>/**"
         ],
