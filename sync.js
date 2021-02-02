@@ -264,7 +264,7 @@ async function sync(){
 
 async function main(){
     let appPath = process.cwd();
-    let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
+    let configPath = appPath;
     config = await loadConfig(appPath, configPath);
 
     await sync();
