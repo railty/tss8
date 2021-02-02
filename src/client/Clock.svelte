@@ -83,11 +83,11 @@
 			checkin_name = '';
 			checkin_photo = 'image/enter.jpg';
 			checkout_name = employee.name;
-			checkout_photo = `file://${globalThis.config.employeePhotoPath}${employee.id}.jpg`;
+			checkout_photo = `employees/${employee.id}.jpg`;
 		}
 		if (state == "checkout"){
 			checkin_name = employee.name;
-			checkin_photo = `file://${globalThis.config.employeePhotoPath}${employee.id}.jpg`;
+			checkin_photo = `employees/${employee.id}.jpg`;
 			checkout_name = '';
 			checkout_photo = 'image/exit.jpg';
 		}

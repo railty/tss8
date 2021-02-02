@@ -3,15 +3,28 @@
 	import Clock from './Clock.svelte';
 	import Admin from './Admin.svelte';
 	import SwapText from './SwapText.svelte';
+	import { callServer } from './clientUtils';
 
-	let mode = 'clock';
+	let mode;
+	//let mode = 'clock';
 	//let mode = 'admin';
 
 	let message = "";
 	let updates;
+
+	let ws;
 	async function init(){
-		globalThis.config = await electronSvr.getConfig();
-		
+		ws = new WebSocket('ws://localhost:8000/ipc');
+		ws.onopen = function () {
+			ws.send("getConfig");
+		};
+
+      	ws.onmessage = function (e) {
+			message = e.data;
+      	};
+
+		globalThis.config = await callServer('GET', '/getConfig');
+		mode = globalThis.config.mode;
 		electronSvr.setupListener((msg)=>{
 			if (typeof msg == "string") {
 				message = msg;

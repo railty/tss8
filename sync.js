@@ -4,11 +4,14 @@ const MD5 = require("crypto-js/md5");
 const mysql = require('mysql2/promise');
 const path = require("path");
 const admin = require("firebase-admin");
+const uuid = require("uuid-v4");
 const serviceAccount = require("./tss7-firebase-adminsdk.json");
+
+let storageBucket = "tss7-c74db.appspot.com";
 
 let app = admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: "tss7-c74db.appspot.com",
+  storageBucket: storageBucket,
   databaseURL: 'https://tss7-c74db.firebaseio.com'
 });
 
@@ -20,26 +23,30 @@ let config;
 async function storage(){
     let bucket = admin.storage().bucket();
 
-    let files = await bucket.getFiles();
-    console.log(files.length);
-
-    let files2 = await bucket.getFiles({
-        prefix: 'camera/'
+    /*
+    let employees = await bucket.getFiles({
+        prefix: 'employees/'
     });
-    console.log(files2.length);
+    console.log(employees.length);
 
-    files2 = files2[0].map((f)=>{
+    employees = employees[0].map((f)=>{
         return f.name;
     });
+    */
 
-    let file1 = bucket.file('camera/c67670b4-b091-4dcb-bed0-8ca8861f9580.jpg');
-    let e1 = await file1.exists();
+   let photoFile = "employees/100.jpg";
+    let file1 = bucket.file(photoFile);
+    let [e1] = await file1.exists();
     console.log(e1);
-    
-    let file2 = bucket.file('camera/c67670b4-b091-4dcb-bed0-8ca8861f9581.jpg');
-    let e2 = await file2.exists();
-    console.log(e2);
+    let [metadata] = await file1.getMetadata();
+    let downloadToken = metadata.metadata.firebaseStorageDownloadTokens;
+
+    let url = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodeURIComponent(photoFile)}?alt=media&token=${downloadToken}`;
+    console.log(url);
+
+   // const [metadata] = await file1.getMetadata();
 }
+//storage();
 
 async function cloudStore(){
     let db = admin.firestore();
@@ -53,7 +60,7 @@ async function cloudStore(){
     };
 
 }
-//storage();
+
 //cloudStore();
 
 
@@ -129,13 +136,32 @@ async function syncEmployees(){
     async function uploadPhoto(id, dataUrl){
         console.log(`uploading ${id}`);
 
-        let photo_file = `${configSync.employeesPhotoPath}/${id}.jpg`;
-        let photoData = await ffs.readFile(photo_file);
+        let photoFile = `${configSync.employeesPhotoPath}/${id}.jpg`;
+        let photoData = await ffs.readFile(photoFile);
         let gcf = bucket.file(`employees/${id}.jpg`);
+
+        let [metadata1] = await gcf.getMetadata();
 
         await gcf.save(photoData);
 
-        let url = gcf.publicUrl();
+        let [metadata] = await gcf.getMetadata();
+
+        let downloadToken;
+        if (metadata.metadata && metadata.metadata.firebaseStorageDownloadTokens){
+            downloadToken = metadata.metadata.firebaseStorageDownloadTokens;
+        }
+        else{
+            downloadToken = uuid();
+            await gcf.setMetadata({
+                metadata: {
+                  // Update the download token:
+                  firebaseStorageDownloadTokens: downloadToken,
+                  // Or delete it:
+                  //firebaseStorageDownloadTokens: null,
+                }
+            });
+        }
+        let url = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodeURIComponent(photoFile)}?alt=media&token=${downloadToken}`;
         return url;
     }
     
@@ -175,7 +201,7 @@ async function syncEmployees(){
               photo_url = await uploadPhoto(id, dataUrl);
             }
             else{
-              console.log("skip same photo" + id);  
+              //console.log("skip same photo" + id);  
             }
           }
           else {
@@ -203,7 +229,7 @@ async function syncEmployees(){
                     await updateEmployee(employeeRef, empDb);
                 }
                 else{
-                    logger.log("skip fb data, same timestamp " + id);
+                    //logger.log("skip fb data, same timestamp " + id);
                 }
             }
             else{

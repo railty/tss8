@@ -4,9 +4,10 @@
 	import Setting from './Setting.svelte';	
 	import PunchData from './PunchData.svelte';	
 	import EmployeeData from './EmployeeData.svelte';	
+	import MysqlEmployee from './MysqlEmployee.svelte';	
 
 	export let mode;
-	let menu = 'employeeData';
+	let menu = 'mysqlEmployee';
 </script>
 
 <div class="flex flex-grow flex-col">
@@ -22,5 +23,9 @@
 	
 	{#if menu=='employeeData'}
 		<EmployeeData />
+	{/if}
+
+	{#if menu=='mysqlEmployee'}
+		<MysqlEmployee />
 	{/if}
 </div>

@@ -4,14 +4,15 @@ const logger = require('electron-log');
 const ffs = require('final-fs');
 const isDev = require('electron-is-dev');
 const { showMsg, copyIfNotExists, mkdirIfNotExists, detectEnv, loadConfig } = require('./utils');
+const { initServer } = require('./server/server.js');
  
 if (isDev){
   app.commandLine.appendSwitch('remote-debugging-port', '8315')
 }
 
-detectEnv();
-
 async function init(){
+  detectEnv();
+
   let appPath = app.getAppPath();
   let configPath = app.getPath('userData');
 
@@ -30,8 +31,6 @@ async function init(){
     await copyIfNotExists(path.join(global.config.appPath, f.src), path.join(global.config.dataPath, f.dest));   
   }
 }
-
-init();
 
 require('update-electron-app')({
   //updateInterval: '1 hour',
@@ -74,7 +73,9 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow(options);
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, '../public/index.html'));
+  let url = `http://${global.config.client.host}:${global.config.client.port}/`;
+  logger.info("url = ", url);
+  mainWindow.loadURL(url);
   // Open the DevTools.
   
   if (isDev) mainWindow.webContents.openDevTools();
@@ -85,7 +86,11 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+app.on('ready', async ()=>{
+  await init()
+  initServer();
+  createWindow();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

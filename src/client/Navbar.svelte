@@ -24,6 +24,10 @@
 			menu: 'employeeData',
 			label: 'Employee'
 		},
+		{
+			menu: 'mysqlEmployeeData',
+			label: 'mysql Employee'
+		},
 	];
 
 </script>

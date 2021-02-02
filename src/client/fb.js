@@ -42,3 +42,22 @@ export async function getEmployees() {
     });
     return employees;
 }
+
+export async function uploadPhoto(id, dataUrl){
+    console.log(`uploading ${id}`);
+
+    let storageRef = filebaseStorage.ref();
+    let photoRef = storageRef.child(`employees/${id}.jpg`);
+
+    if (dataUrl){
+      await photoRef.putString(dataUrl, 'data_url');
+      let url = await photoRef.getDownloadURL();
+      return url;
+    }
+    return null;
+}
+
+export async function updateEmployee(employeeRef, employee){
+    console.log("updating " + employee.id);
+    await employeeRef.set(employee);
+}

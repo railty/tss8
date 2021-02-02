@@ -4,7 +4,6 @@ const sqlite3 = require('sqlite-async')
 const logger = require('electron-log');
 const path = require('path');
 const MD5 = require("crypto-js/md5");
-
 const { showMsg } = require('./utils');
 
 class DBSQLite{

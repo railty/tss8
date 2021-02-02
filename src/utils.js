@@ -102,3 +102,12 @@ exports.detectEnv = () => {
       punchAction = (last_punches[0].action == 'checkin') ? 'checkout' : 'checkin';
     return punchAction;
   }
+
+  exports.readDataUrl = async function (photoFile){
+    //no encoding means binary
+    let photoData = await ffs.readFile(photoFile);
+    let buf = Buffer.from(photoData, 'binary');
+    let string = buf.toString('base64');
+    string = "data:image/jpeg;base64," + string;
+    return string;
+}
