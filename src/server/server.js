@@ -5,10 +5,11 @@ const logger = require('electron-log');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const expressWs = require('express-ws');
-const mysql = require('mysql2/promise');
 const ffs = require('final-fs');
 const MD5 = require("crypto-js/md5");
 const { showMsg, readDataUrl } = require('../utils');
+
+//const mysql = require('mysql2/promise');
 
 exports.initServer = () => {
     const app = express();
@@ -27,6 +28,7 @@ exports.initServer = () => {
         res.send(global.config);
     });
 
+    /*
     app.get('/getMysqlEmployees', async function(req, res, next) {
       const conn = await mysql.createConnection(global.config.mysql);
       let [rows, cols] = await conn.execute('select * from tss.employees');
@@ -41,7 +43,7 @@ exports.initServer = () => {
         let photo_md5 = MD5(dataUrl).toString();
         employees.push({store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at, photo_md5});
       }
-
+    */  
       showMsg("");
       await conn.end();
       res.send(employees);
