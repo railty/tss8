@@ -3,6 +3,11 @@ const logger = require('electron-log');
 const ffs = require('final-fs');
 const path = require('path');
 const moment = require('moment');
+const admin = require("firebase-admin");
+const MD5 = require("crypto-js/md5");
+const uuid = require("uuid-v4");
+
+let storageBucket = "tss7-c74db.appspot.com";
 
 exports.showMsg = (msg) => {
     global.mainWindow.webContents.send('message', msg);
@@ -110,4 +115,65 @@ exports.detectEnv = () => {
     let string = buf.toString('base64');
     string = "data:image/jpeg;base64," + string;
     return string;
-}
+  }
+
+  exports.getMD5 = async function (photoFile){
+    try {
+        let binary = await ffs.readFile(photoFile);
+        let photo = 'data:image/jpeg;base64,' + Buffer.from(binary).toString('base64');
+        let photo_md5 = MD5(photo).toString();
+        return photo_md5;
+    }
+    catch (ex) {
+        logger.log(`cannot find ${photoFile}`);
+    }
+    return null;
+  }
+
+  exports.dlPhoto = async function (photoUrl, photoFile){
+    try {
+      let bucket = admin.storage().bucket();      
+      let file = bucket.file(photoUrl);
+      await file.download({
+          destination: photoFile,
+      });
+      return true;
+    }
+    catch (ex) {
+        logger.log(`cannot find ${photoUrl}`);
+    }
+    return false;
+  }
+
+  exports.ulPhoto = async function (photoUrl, photoFile){
+    try {
+      let photoData = await ffs.readFile(photoFile);
+
+      let bucket = admin.storage().bucket();      
+      let gcf = bucket.file(photoUrl);
+      await gcf.save(photoData);
+
+      let [metadata] = await gcf.getMetadata();
+      let downloadToken;
+      if (metadata.metadata && metadata.metadata.firebaseStorageDownloadTokens){
+          downloadToken = metadata.metadata.firebaseStorageDownloadTokens;
+      }
+      else{
+          downloadToken = uuid();
+          await gcf.setMetadata({
+              metadata: {
+                // Update the download token:
+                firebaseStorageDownloadTokens: downloadToken,
+                // Or delete it:
+                //firebaseStorageDownloadTokens: null,
+              }
+          });
+      }
+      let url = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodeURIComponent(photoUrl)}?alt=media&token=${downloadToken}`;
+      return url;
+    }
+    catch (ex) {
+        logger.log(`cannot find ${photoFile}`);
+    }
+    return null;
+  }

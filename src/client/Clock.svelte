@@ -1,8 +1,8 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import uuidv4 from 'uuid/v4';
-	import { savePunch } from "./fb.js";
 	import SwapText from './SwapText.svelte';
+	import { savePunch } from "./fb.js";
 
 	export let mode;
 	let cameraWidth = 240;
@@ -63,6 +63,8 @@
 				punch.created_at = punch.time;
 				punch.updated_at = punch.time;
 				punch.state = "created";
+				punch.photo_md5 = null;
+				punch.photo_url = null;
 				await savePunch(punch);
 			}
 		}

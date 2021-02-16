@@ -19,7 +19,7 @@
     "build:svelte": "rollup -c",
     "test": "jest",
     "lint": "echo \"No linting configured\"",
-    "sync": "node sync.js"
+    "sync": "node src/server/syncDbFb.js"
   },
   "keywords": [],
   "author": {
@@ -45,8 +45,7 @@
     "sqlite-async": "^1.1.0",
     "sqlite3": "^4.2.0",
     "update-electron-app": "^2.0.1",
-    "uuid-v4": "^0.1.0",
-    "mysql2": "^2.2.5"
+    "uuid-v4": "^0.1.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.54",
@@ -74,7 +73,8 @@
     "rollup-plugin-terser": "^7.0.2",
     "svelte": "^3.0.0",
     "svelte-preprocess": "^4.6.1",
-    "tailwindcss": "^2.0.2"
+    "tailwindcss": "^2.0.2",
+    "mysql2": "^2.2.5"    
   },
   "jest": {
     "verbose": true,

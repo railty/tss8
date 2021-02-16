@@ -9,8 +9,6 @@ const ffs = require('final-fs');
 const MD5 = require("crypto-js/md5");
 const { showMsg, readDataUrl } = require('../utils');
 
-//const mysql = require('mysql2/promise');
-
 exports.initServer = () => {
     const app = express();
     expressWs(app);
@@ -29,6 +27,8 @@ exports.initServer = () => {
     });
 
     /*
+    const mysql = require('mysql2/promise');
+
     app.get('/getMysqlEmployees', async function(req, res, next) {
       const conn = await mysql.createConnection(global.config.mysql);
       let [rows, cols] = await conn.execute('select * from tss.employees');
@@ -43,12 +43,11 @@ exports.initServer = () => {
         let photo_md5 = MD5(dataUrl).toString();
         employees.push({store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at, photo_md5});
       }
-    */  
       showMsg("");
       await conn.end();
       res.send(employees);
     });
-
+    */
     app.get('/getDataUrl', async function(req, res, next) {
       let rc;
       if (req.query.type == "employeePhoto"){

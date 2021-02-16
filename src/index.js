@@ -5,6 +5,7 @@ const ffs = require('final-fs');
 const isDev = require('electron-is-dev');
 const { showMsg, copyIfNotExists, mkdirIfNotExists, detectEnv, loadConfig } = require('./utils');
 const { initServer } = require('./server/server.js');
+const { syncDbFb } = require('./server/syncDbFb');
  
 if (isDev){
   app.commandLine.appendSwitch('remote-debugging-port', '8315')
@@ -90,6 +91,9 @@ app.on('ready', async ()=>{
   await init()
   initServer();
   createWindow();
+
+  await syncDbFb();
+  setInterval(await syncDbFb, global.config.syncFbInterval);
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

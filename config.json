@@ -6,7 +6,6 @@
     "canvasTimeout": 3000,
     "warningCanvasTimeout": 10000,
     "refreshTimeout": 1000,
-    "syncFbInterval": 600000,
     "startHour": 6,
     "port": 3000,
     "mysql": {
