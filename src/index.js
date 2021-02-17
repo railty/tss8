@@ -3,6 +3,7 @@ const path = require('path');
 const logger = require('electron-log');
 const ffs = require('final-fs');
 const isDev = require('electron-is-dev');
+const admin = require("firebase-admin");
 const { showMsg, copyIfNotExists, mkdirIfNotExists, detectEnv, loadConfig } = require('./utils');
 const { initServer } = require('./server/server.js');
 const { syncDbFb } = require('./server/syncDbFb');
@@ -92,6 +93,12 @@ app.on('ready', async ()=>{
   initServer();
   createWindow();
 
+  admin.initializeApp({
+    credential: admin.credential.cert(global.config.fbServiceAccount),
+    storageBucket: global.config.fbStorageBucket,
+    databaseURL: global.config.fbDatabaseURL,
+  });
+  
   await syncDbFb();
   setInterval(await syncDbFb, global.config.syncFbInterval);
 });

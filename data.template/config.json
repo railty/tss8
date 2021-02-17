@@ -16,5 +16,9 @@
         "host": "localhost",
         "port": 8000
     },
-    "mode": "clock"
+    "mode": "clock",
+    "fbStorageBucket": "tss7-c74db.appspot.com",
+    "fbDatabaseURL": "https://tss7-c74db.firebaseio.com",
+    "fbServiceAccount": {
+    }
 }

@@ -2,18 +2,9 @@ const logger = require('electron-log');
 const MD5 = require("crypto-js/md5");
 const path = require("path");
 const admin = require("firebase-admin");
-const serviceAccount = require("../../tss7-firebase-adminsdk.json");
 const { mainModule } = require('process');
 const db = new (require('../dbSqlite'))();
 const { loadConfig, getMD5, dlPhoto, ulPhoto } = require('../utils');
-
-let storageBucket = "tss7-c74db.appspot.com";
-
-let app = admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: storageBucket,
-  databaseURL: 'https://tss7-c74db.firebaseio.com'
-});
 
 async function syncPunches(){
     logger.log(`syncPunches`);
