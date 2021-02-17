@@ -72,6 +72,8 @@ const createWindow = () => {
       preload: __dirname + '/preload.js'
     }
   };
+
+  logger.info("options = ", options);
   const mainWindow = new BrowserWindow(options);
 
   // and load the index.html of the app.

@@ -22,5 +22,5 @@
     "fbServiceAccount": {
     },
     "fullscreen": false,
-    "devTools": false
+    "devTools": true
 }
