@@ -40,7 +40,7 @@
     "express": "^4.17.1",
     "express-ws": "^4.0.0",
     "final-fs": "^1.6.1",
-    "firebase-admin": "^9.4.2",
+    "firebase-admin": "^9.5.0",
     "moment": "^2.29.1",
     "serve-favicon": "^2.5.0",
     "sqlite-async": "^1.1.0",
