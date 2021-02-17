@@ -31,7 +31,15 @@ async function syncPunches(){
 async function syncEmployees(){
     logger.log(`syncEmployees`);
 
-    let fb = admin.firestore();
+    let fb;
+    try{
+        fb = admin.firestore();
+    }
+    catch(ex){
+        console.log(ex.toString());
+        console.log(ex);
+    }
+    //let fb = admin.firestore();
     let bucket = admin.storage().bucket();
 
     let employeesFb = {};
