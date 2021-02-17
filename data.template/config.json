@@ -20,5 +20,7 @@
     "fbStorageBucket": "tss7-c74db.appspot.com",
     "fbDatabaseURL": "https://tss7-c74db.firebaseio.com",
     "fbServiceAccount": {
-    }
+    },
+    "fullscreen": false,
+    "devTools": false
 }

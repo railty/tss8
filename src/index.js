@@ -60,7 +60,7 @@ const createWindow = () => {
   let options = {
     alwaysOnTop: false,
     frame: isDev,
-    fullscreen: !isDev,
+    fullscreen: global.config.fullscreen,
     fullscreenable: true,
     transparent: false,
     titleBarStyle: 'default',
@@ -80,7 +80,7 @@ const createWindow = () => {
   mainWindow.loadURL(url);
   // Open the DevTools.
   
-  if (isDev) mainWindow.webContents.openDevTools();
+  if (global.config.devTools) mainWindow.webContents.openDevTools();
 
   global.mainWindow = mainWindow;
 };
