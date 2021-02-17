@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import uuidv4 from 'uuid/v4';
+	import uuidv4 from 'uuid-v4';
 	import SwapText from './SwapText.svelte';
 	import { savePunch } from "./fb.js";
 

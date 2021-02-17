@@ -103,16 +103,6 @@ app.on('ready', async ()=>{
     databaseURL: global.config.fbDatabaseURL,
   });
   
-  let fb;
-  try{
-      logger.log("111111111111222222222222");
-      fb = admin.firestore();
-  }
-  catch(ex){
-      logger.log(ex.toString());
-      logger.log(ex);
-  }
-
   await syncDbFb();
   setInterval(await syncDbFb, global.config.syncFbInterval);
 });
