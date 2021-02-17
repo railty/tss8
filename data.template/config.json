@@ -8,11 +8,13 @@
     "refreshTimeout": 1000,
     "syncFbInterval": 600000,
     "startHour": 6,
-    "port": 3000,
-    "mysql": {
-        "host": "192.168.168.226",
-        "user": "111",
-        "password": "xxx",
-        "database": "tss"
-    }    
+    "server": {
+        "host": "localhost",
+        "port": 8000
+    },
+    "client": {
+        "host": "localhost",
+        "port": 8000
+    },
+    "mode": "clock"
 }

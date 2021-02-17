@@ -15,8 +15,10 @@ let app = admin.initializeApp({
   databaseURL: 'https://tss7-c74db.firebaseio.com'
 });
 
-const { loadConfig } = require('./src/utils');
+const { loadConfig, getMD5, dlPhoto, ulPhoto } = require('./src/utils');
+
 const configSync = require("./sync.json");
+const { updateLocale } = require('moment');
 
 let config;
 
@@ -184,21 +186,18 @@ async function syncEmployees(){
         let id = empDb.id;
         let photo_file = `${configSync.employeesPhotoPath}/${id}.jpg`;
     
-        let dataUrl = await imgToDataUrl(photo_file);
-        let photo_md5;
+        let photo_md5 = await getMD5(photo_file);
         let photo_url;
 
         let empFb = employeesFb[id];
 
         //if local have a photo
-        if (dataUrl){
-          photo_md5 = MD5(dataUrl).toString();
-   
+        if (photo_md5){
           //have remote
           if (empFb){
             //photo not match
             if (empFb.photo_md5 != photo_md5) {
-              photo_url = await uploadPhoto(id, dataUrl);
+              photo_url = await ulPhoto(`employees/${id}.jpg`, photo_file);
             }
             else{
               //console.log("skip same photo" + id);  
@@ -206,7 +205,7 @@ async function syncEmployees(){
           }
           else {
               //the photo might be alright, just the data missing, but neverthenless, upload the photo
-              photo_url = await uploadPhoto(id, dataUrl);
+              photo_url = await ulPhoto(`employees/${id}.jpg`, photo_file);
           }
         }
     
@@ -220,10 +219,10 @@ async function syncEmployees(){
           await updateEmployee(employeeRef, empDb);
         }
         else{
-            empDb.photo_url = empFb.photo_url;
-            empDb.photo_md5 = empFb.photo_md5;
-
             if (empFb){
+                empDb.photo_url = empFb.photo_url;
+                empDb.photo_md5 = empFb.photo_md5;
+    
                 if (empFb.updated_at.toMillis() < empDb.updated_at.valueOf()) {
                     logger.log("update " + id + "for new updated_at");
                     await updateEmployee(employeeRef, empDb);
@@ -234,6 +233,8 @@ async function syncEmployees(){
             }
             else{
                 logger.log("create " + id);
+                empDb.photo_url = null;
+                empDb.photo_md5 = null;
                 await updateEmployee(employeeRef, empDb);
             }
         }
@@ -247,7 +248,12 @@ async function syncEmployees(){
     for (let emp of rows){
         let {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at} = {...emp};
         emp = {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at};
-        await syncEmployee(emp);
+        if (emp.id==99999){
+            let x = 1;
+            x++;
+            await syncEmployee(emp);
+        }
+        //await syncEmployee(emp);
     }
     
     await conn.end();
