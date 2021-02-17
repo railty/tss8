@@ -21,6 +21,5 @@
     "fbDatabaseURL": "https://tss7-c74db.firebaseio.com",
     "fbServiceAccount": {
     },
-    "fullscreen": false,
-    "devTools": true
+    "devMode": true
 }

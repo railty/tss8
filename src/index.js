@@ -57,10 +57,12 @@ autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
 const createWindow = () => {
   // Create the browser window.
 
+  let devMode = isDev;
+  if (global.config.devMode) devMode = global.config.devMode;
   let options = {
     alwaysOnTop: false,
-    frame: isDev,
-    fullscreen: global.config.fullscreen,
+    frame: devMode,
+    fullscreen: !devMode,
     fullscreenable: true,
     transparent: false,
     titleBarStyle: 'default',
@@ -82,7 +84,7 @@ const createWindow = () => {
   mainWindow.loadURL(url);
   // Open the DevTools.
   
-  if (global.config.devTools) mainWindow.webContents.openDevTools();
+  if (devMode) mainWindow.webContents.openDevTools();
 
   global.mainWindow = mainWindow;
 };
