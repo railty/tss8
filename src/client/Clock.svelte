@@ -25,7 +25,10 @@
 			time: new Date(),
 		};
 		punch.photo = canvas.toDataURL("image/jpeg");
+		let tm1 = new Date();
 		employee = await electronSvr.punch(punch);
+		let tm2 = new Date();
+		console.log("time:" + tm2.getTime()-tm2.getTime());
 
 		if (employee) {
 			console.log(employee);

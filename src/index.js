@@ -75,7 +75,7 @@ const createWindow = () => {
     }
   };
 
-  logger.info("options = ", options);
+  //logger.info("options = ", options);
   const mainWindow = new BrowserWindow(options);
 
   // and load the index.html of the app.
@@ -104,7 +104,7 @@ app.on('ready', async ()=>{
   });
   
   await syncDbFb();
-  setInterval(await syncDbFb, global.config.syncFbInterval);
+  setInterval(syncDbFb, global.config.syncFbInterval);
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

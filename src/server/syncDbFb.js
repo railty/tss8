@@ -2,7 +2,6 @@ const logger = require('electron-log');
 const MD5 = require("crypto-js/md5");
 const path = require("path");
 const admin = require("firebase-admin");
-const { mainModule } = require('process');
 const db = new (require('../dbSqlite'))();
 const { loadConfig, getMD5, dlPhoto, ulPhoto } = require('../utils');
 
@@ -11,19 +10,21 @@ async function syncPunches(){
     let fb = admin.firestore();
     let count = 0;
 
-    let punchesSnapshot = await fb.collection("stores").doc(config.storeId.toString()).collection("punches").where("photo_url", "==", null).limit(10).get();
+    let punchesSnapshot = await fb.collection("stores").doc(global.config.storeId.toString()).collection("punches").where("photo_url", "==", null).limit(10).get();
     for (let doc of punchesSnapshot.docs){
         let punch = doc.data();
-        let photoFile = path.join(config.cameraPath, `${punch.id}.jpeg`);
-        let photoMD5 = await getMD5(photoFile);
-
-        logger.info(`upload ${photoFile}`);
-        let photoUrl = await ulPhoto(`camera/${punch.id}.jpeg`, photoFile);
-        //console.log(photoUrl);
-        await doc.ref.update({
-            photo_url: photoUrl,
-            photo_md5: photoMD5
-        })
+        if (punch.node == global.config.hostname){
+            let photoFile = path.join(global.config.cameraPath, `${punch.id}.jpeg`);
+            let photoMD5 = await getMD5(photoFile);
+    
+            logger.info(`upload ${photoFile}`);
+            let photoUrl = await ulPhoto(`camera/${punch.id}.jpeg`, photoFile);
+            //console.log(photoUrl);
+            await doc.ref.update({
+                photo_url: photoUrl,
+                photo_md5: photoMD5
+            })
+        }
     }
     logger.log(`total ${count} punches downloaded`);
 }
@@ -48,7 +49,7 @@ async function syncEmployees(){
         emp.updated_at = emp.updated_at.toDate();
         await db.upsertLocalEmployee(emp);
 
-        let photoFile = path.join(config.employeePhotoPath, `${emp.id}.jpg`);
+        let photoFile = path.join(global.config.employeePhotoPath, `${emp.id}.jpg`);
         let photoMD5 = await getMD5(photoFile);
 
         if (emp.photo_md5 != photoMD5){
@@ -61,15 +62,21 @@ async function syncEmployees(){
 }
 
 syncDbFb = async () => {
-    await syncEmployees();
-    await syncPunches();
+    logger.log(`synchronizing ... `);
+    try{
+        await syncEmployees();
+        await syncPunches();
+    }
+    catch(ex){
+        logger.log(ex.toString());
+    }
 }
 exports.syncDbFb = syncDbFb;
 
 manualSyncDbFb = async () => {
     let appPath = process.cwd();
     let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
-    config = await loadConfig(appPath, configPath);
+    global.config = await loadConfig(appPath, configPath);
     syncDbFb();
 }
 
