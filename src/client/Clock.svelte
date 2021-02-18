@@ -28,7 +28,8 @@
 		let tm1 = new Date();
 		employee = await electronSvr.punch(punch);
 		let tm2 = new Date();
-		console.log("time:" + tm2.getTime()-tm2.getTime());
+		let dlt = tm2.getTime()-tm1.getTime();
+		console.log("time:" + dlt.toString());
 
 		if (employee) {
 			console.log(employee);
