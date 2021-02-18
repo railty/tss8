@@ -64,6 +64,7 @@
 				punch.store_id = globalThis.config.storeId;
 				punch.store = globalThis.config.store;
 				punch.node = globalThis.config.hostname;
+				punch.version = globalThis.config.version;
 				punch.created_at = punch.time;
 				punch.updated_at = punch.time;
 				punch.state = "created";
