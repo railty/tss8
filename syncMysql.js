@@ -20,105 +20,45 @@ const { loadConfig, getMD5, dlPhoto, ulPhoto } = require('./src/utils');
 const configSync = require("./sync.json");
 const { updateLocale } = require('moment');
 
-let config;
-
-async function storage(){
-    let bucket = admin.storage().bucket();
-
-    /*
-    let employees = await bucket.getFiles({
-        prefix: 'employees/'
-    });
-    console.log(employees.length);
-
-    employees = employees[0].map((f)=>{
-        return f.name;
-    });
-    */
-
-   let photoFile = "employees/100.jpg";
-    let file1 = bucket.file(photoFile);
-    let [e1] = await file1.exists();
-    console.log(e1);
-    let [metadata] = await file1.getMetadata();
-    let downloadToken = metadata.metadata.firebaseStorageDownloadTokens;
-
-    let url = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodeURIComponent(photoFile)}?alt=media&token=${downloadToken}`;
-    console.log(url);
-
-   // const [metadata] = await file1.getMetadata();
-}
-//storage();
-
-async function cloudStore(){
-    let db = admin.firestore();
-
-    let punchesSnapshot = await db.collection("stores").doc('999').collection("employees").doc('99999').collection("punches").get();
-    console.log(punchesSnapshot.docs.length);
-
-    for (let doc of punchesSnapshot.docs) {
-        console.log(doc.data());
-        await doc.ref.delete();
-    };
-
-}
-
-//cloudStore();
-
-
-
-async function test_mysql(){
-    
-    // query database
-    //const [rows, fields] = await connection.execute('SELECT * FROM `t_users` WHERE `name` like ? AND `coins` = ?', ['D%', 1000]);
-    const [rows, fields] = await connection.execute('SELECT * FROM `punches`');
-    console.log(rows);
-    console.log(fields);
-
-    //let res = await connection.execute('update `t_users` set name = ? WHERE `userid` = ?', ['aaa', 362]);
-
-    await connection.end()
-}
-
-//test_mysql();
-
 async function syncPunches(storeId){
     logger.log(`syncPunches for ${storeId}`);
     const conn = await mysql.createConnection(configSync.mysql);
     let db = admin.firestore();
     let bucket = admin.storage().bucket();
 
-    let employeesSnapshot = await db.collection("stores").doc(storeId).collection("employees").listDocuments();
+    let res = await conn.execute('select updated_at from punches order by updated_at limit 1');
+    let lastUpdatedAt = res[0][0].updated_at;
+    //firebase save the datetime with nanoseconds, current mysql can also do that, but my old mysql have only seconds
+    //to make sure do not miss any, less 1 second first
+    lastUpdatedAt.setSeconds(lastUpdatedAt.getSeconds()-1);
+
     let count = 0;;
-    for (let employeeRef of employeesSnapshot){
-        let employee = await employeeRef.get();
-
-        if (!employee.exists){  //this is to make sure this is acollection, listDocuments will return docs and sub collections, we are only interested in collections
-            let punchesSnapshot = await employeeRef.collection("punches").where('state', '==', 'created').get();
-            for (let punch of punchesSnapshot.docs){
-                let p = punch.data();
-
-                try
-                {
-                    logger.log(p);
-                    let resSQL = await conn.execute('insert into punches (id, time, employee_id, action, created_at, updated_at, store, node) values(?, ?, ?, ?, ?, ?, ?, ?)', [p.id, p.time.toDate(), p.employee_id, p.action, p.created_at.toDate(), p.updated_at.toDate(), p.store, p.node]);
-                    if (resSQL[0].affectedRows == 1){
-                        const resFb = await punch.ref.update({state: "downloaded"});
-                        console.log(resFb);
-
-                        logger.log(`dl camera/${fn} to ${config.cameraPath}/${fn}`);
-                        let fn = `${p.id}.jpeg`;
-                        let file = bucket.file(`camera/${fn}`);
-                        await file.download({
-                            destination: `${config.cameraPath}/${fn}`,
-                        });
-            
-                        count++;
-                    }
-                }  
-                catch(ex){logger.log(ex.toString())}
+    let punchesSnapshot = await db.collection("stores").doc(storeId).collection("punches").where('updated_at', '>', lastUpdatedAt).orderBy('updated_at').get();
+    for (let punch of punchesSnapshot.docs){
+        let p = punch.data();
+        try
+        {
+            logger.log(p);
+            let resSQL = await conn.execute('select * from punches where id = ?', [p.id]);
+            if (resSQL[0].length==0) {
+                resSQL = await conn.execute('insert into punches (id, time, employee_id, action, created_at, updated_at, store, node) values(?, ?, ?, ?, ?, ?, ?, ?)', [p.id, p.time.toDate(), p.employee_id, p.action, p.created_at.toDate(), p.updated_at.toDate(), p.store, p.node]);
+                if (resSQL[0].affectedRows == 1){
+                    //const resFb = await punch.ref.update({state: "downloaded"});
+                    //console.log(resFb);
+    
+                    let fn = `${p.id}.jpeg`;
+                    logger.log(`dl camera/${fn} to ${global.config.cameraPath}/${fn}`);
+                    
+                    let file = bucket.file(`camera/${fn}`);
+                    await file.download({
+                        destination: `${global.config.cameraPath}/${fn}`,
+                    });
+        
+                    count++;
+                }
             }
-        }
+}  
+        catch(ex){logger.log(ex.toString())}
     }
 
     await conn.end();
@@ -131,8 +71,6 @@ async function syncEmployees(){
     let fb = admin.firestore();
     let bucket = admin.storage().bucket();
 
-    let employeesFb = {};
-    let files;
     let count = 0;
 
     async function uploadPhoto(id, dataUrl){
@@ -189,7 +127,10 @@ async function syncEmployees(){
         let photo_md5 = await getMD5(photo_file);
         let photo_url;
 
-        let empFb = employeesFb[id];
+        let employeeRef = fb.collection("employees").doc(id.toString());
+
+        let empFb = await employeeRef.get();
+        empFb = empFb.data();
 
         //if local have a photo
         if (photo_md5){
@@ -208,8 +149,6 @@ async function syncEmployees(){
               photo_url = await ulPhoto(`employees/${id}.jpg`, photo_file);
           }
         }
-    
-        let employeeRef = fb.collection("employees").doc(id.toString());
     
         //photo changed, update fb anyway
         if (photo_url) {
@@ -240,20 +179,18 @@ async function syncEmployees(){
         }
     }
 
-    let [rows, cols] = await conn.execute('select * from tss.employees');
+    let lastUpdatedAt =  await fb.collection("employees").orderBy("updated_at", "desc").limit(1).get();
+    lastUpdatedAt = lastUpdatedAt.docs[0].data().updated_at.toDate();
+    //minus 1 second
+    lastUpdatedAt.setSeconds(lastUpdatedAt.getSeconds()-1);
+    console.log(lastUpdatedAt);
 
-    let employeesSnapshot = await fb.collection("employees").get();
-    employeesSnapshot.forEach((doc) => {employeesFb[doc.id] = doc.data();});
+    let [rows, cols] = await conn.execute('select * from tss.employees where updated_at > ?  order by updated_at', [lastUpdatedAt]);
 
     for (let emp of rows){
         let {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at} = {...emp};
         emp = {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at};
-        if (emp.id==99999){
-            let x = 1;
-            x++;
-            await syncEmployee(emp);
-        }
-        //await syncEmployee(emp);
+        await syncEmployee(emp);
     }
     
     await conn.end();
@@ -270,11 +207,11 @@ async function sync(){
 
 async function main(){
     let appPath = process.cwd();
-    let configPath = appPath;
-    config = await loadConfig(appPath, configPath);
+    let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
+    global.config = await loadConfig(appPath, configPath);
 
     await sync();
-    //setInterval(await sync, configSync.interval);
+    //setInterval(sync, configSync.interval);
 }
 
 main();
