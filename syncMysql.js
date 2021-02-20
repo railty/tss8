@@ -19,6 +19,18 @@ const { loadConfig, getMD5, dlPhoto, ulPhoto } = require('./src/utils');
 
 const configSync = require("./sync.json");
 const { updateLocale } = require('moment');
+const stores = {
+    2: 'OFMM', 
+    6: 'OFC',
+    8: 'ALP',
+    9: 'HQ',
+    11: 'WM1080',
+    12: 'WM3652',
+    14: 'WM3135',
+    15: 'WM1117',
+    16:'Warehouse',
+    17: '1116WM'
+};
 
 async function syncPunches(storeId){
     logger.log(`syncPunches for ${storeId}`);
@@ -26,8 +38,8 @@ async function syncPunches(storeId){
     let db = admin.firestore();
     let bucket = admin.storage().bucket();
 
-    let res = await conn.execute('select updated_at from punches order by updated_at limit 1');
-    let lastUpdatedAt = res[0][0].updated_at;
+    let res = await conn.execute('select updated_at from punches where store = ? order by updated_at desc limit 1', [stores[storeId]]);
+    let lastUpdatedAt = res[0][0] ? res[0][0].updated_at : new Date('2021-01-01');
     //firebase save the datetime with nanoseconds, current mysql can also do that, but my old mysql have only seconds
     //to make sure do not miss any, less 1 second first
     lastUpdatedAt.setSeconds(lastUpdatedAt.getSeconds()-1);

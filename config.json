@@ -2,7 +2,7 @@
     "storeId": 999,
     "store": "TEST",
     "hostname": "test",
-    "dataPath_2": "d:/tss8",
+    "dataPath": "c:/temp/tss8/",
     "canvasTimeout": 3000,
     "warningCanvasTimeout": 10000,
     "refreshTimeout": 1000,
