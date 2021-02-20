@@ -254,8 +254,8 @@ async function main(){
     //copy config.json into local folder
     global.config = await loadConfig(appPath, configPath);
 
-    //global.config.cameraPath = '/home/sning/camera/';
-    //global.config.employeesPhotoPath = '/home/sning/photos/';
+    global.config.cameraPath = '/home/sning/camera/';
+    global.config.employeesPhotoPath = '/home/sning/photos/';
 
     await sync();
     //setInterval(sync, configSync.interval);
