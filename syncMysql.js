@@ -66,13 +66,6 @@ async function syncPunches(storeId){
 }
 
 async function syncEmployees(){
-    logger.log(`syncEmployees`);
-    const conn = await mysql.createConnection(configSync.mysql);
-    let fb = admin.firestore();
-    let bucket = admin.storage().bucket();
-
-    let count = 0;
-
     async function uploadPhoto(id, dataUrl){
         console.log(`uploading ${id}`);
 
@@ -179,27 +172,76 @@ async function syncEmployees(){
         }
     }
 
-    let lastUpdatedAt =  await fb.collection("employees").orderBy("updated_at", "desc").limit(1).get();
-    lastUpdatedAt = lastUpdatedAt.docs[0].data().updated_at.toDate();
-    //minus 1 second
-    lastUpdatedAt.setSeconds(lastUpdatedAt.getSeconds()-1);
-    console.log(lastUpdatedAt);
+    logger.log(`syncEmployees`);
+    const conn = await mysql.createConnection(configSync.mysql);
+    let fb = admin.firestore();
+    let bucket = admin.storage().bucket();
 
-    let [rows, cols] = await conn.execute('select * from tss.employees where updated_at > ?  order by updated_at', [lastUpdatedAt]);
+    let count = 0;
 
-    for (let emp of rows){
+    //to sych the deleted employees, the only way is to get all and compare all
+    let [employeesDb, cols] = await conn.execute('select * from tss.employees');
+
+    employeesDb = employeesDb.map((emp)=>{
         let {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at} = {...emp};
-        emp = {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at};
-        await syncEmployee(emp);
+        return {store_id, empno, name, id, barcode, name_cn, department, address, city, postal, rate, active, active2, notes, position, created_at, updated_at};
+    });
+    let ctAdded = 0;
+    let ctRemoved = 0;
+    let ctUpdated = 0;
+
+    let employeesFb =  await fb.collection("employees").get();
+    for (let empRef of employeesFb.docs){
+        let empFb = empRef.data();
+        empFb.updated_at = empFb.updated_at.toDate();
+        let empDb = employeesDb.find((empDb)=>empDb.id == empFb.id);
+        if (empDb){
+            if (empDb.updated_at>empFb.updated_at){
+                logger.log(`update employee id = ${empDb.id}`);
+
+                let photo_file = `${configSync.employeesPhotoPath}/${empDb.id}.jpg`;
+                empDb.photo_md5 = await getMD5(photo_file);
+                if (empDb.photo_md5 == empFb.photo_md5){
+                    empDb.photo_url = empFb.photo_url;
+                }
+                else{
+                    logger.log(`upload photo id = ${photo_file}`);
+                    empDb.photo_url = await ulPhoto(`employees/${empDb.id}.jpg`, photo_file);
+                }
+                await empRef.ref.set(empDb);
+                ctUpdated++;
+            }
+            empDb.found = true;
+        }
+        else{
+            logger.log(`remove employee id = ${empFb.id}`);
+
+            if (empFb.photo_url){
+                let file = bucket.file(empFb.photo_url);
+                await file.delete({ignoreNotFound: true});
+            }
+            await empRef.ref.delete();
+            ctRemoved++;
+        }
+    }
+    for (let empDb of employeesDb){
+        if (!empDb.found){
+            logger.log(`add employee id = ${empDb.id}`);
+
+            let photo_file = `${configSync.employeesPhotoPath}/${empDb.id}.jpg`;
+            empDb.photo_md5 = await getMD5(photo_file);
+            empDb.photo_url = await ulPhoto(`employees/${empDb.id}.jpg`, photo_file);
+            await fb.collection("employees").doc(empDb.id.toString()).set(empDb);
+            ctAdded++;
+        }
     }
     
     await conn.end();
-    logger.log(`total ${count} employees uploaded`);
 }
 
 async function sync(){
     for (let store of configSync.stores ){
-        //await syncPunches(store);
+        await syncPunches(store);
     }
 
     await syncEmployees();
@@ -207,8 +249,13 @@ async function sync(){
 
 async function main(){
     let appPath = process.cwd();
-    let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
+    //let configPath = path.join(process.env['APPDATA'], process.env['npm_package_name']);
+    let configPath = appPath;
+    //copy config.json into local folder
     global.config = await loadConfig(appPath, configPath);
+
+    //global.config.cameraPath = '/home/sning/camera/';
+    //global.config.employeesPhotoPath = '/home/sning/photos/';
 
     await sync();
     //setInterval(sync, configSync.interval);
