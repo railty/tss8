@@ -93,7 +93,7 @@ class DBSQLite{
     const punch = await sqlite3.open(global.config.sqlite.punch);
 
     //only local store employee can punch
-    let sql = `SELECT id, empno, barcode, name, name_cn, department, active, active2 from employees WHERE store_id = ${global.config.storeId} and barcode = '${barcode}'`;
+    let sql = `SELECT id, empno, barcode, name, name_cn, department, active, active2 from employees WHERE store_id = ${global.config.storeId} and barcode = '${barcode}' order by updated_at desc`;
     logger.info(sql);
     const employees = await tss.all(sql);
 
