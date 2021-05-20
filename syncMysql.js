@@ -29,7 +29,8 @@ const stores = {
     14: 'WM3135',
     15: 'WM1117',
     16:'Warehouse',
-    17: '1116WM'
+    17: '1116WM',
+    18: 'MEATSHOP'
 };
 
 async function syncPunches(storeId){
