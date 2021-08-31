@@ -41,6 +41,7 @@ async function syncEmployees(){
 
     let ts = await db.getEmployeeTS();
     ts = new Date(ts);
+    //cannot handle the deleted employees
     let employeesSnapshot = await fb.collection("employees").where('updated_at', '>', ts).get();
 
     for (let doc of employeesSnapshot.docs){
