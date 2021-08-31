@@ -28,8 +28,9 @@ const stores = {
     12: 'WM3652',
     14: 'WM3135',
     15: 'WM1117',
-    16:'Warehouse',
-    17: '1116WM'
+    16: 'Warehouse',
+    17: '1116WM',
+    18: 'MEATSHOP'
 };
 
 async function syncPunches(storeId){
@@ -65,7 +66,7 @@ async function syncPunches(storeId){
                     await file.download({
                         destination: `${global.config.cameraPath}/${fn}`,
                     });
-        
+
                     count++;
                 }
             }
@@ -203,6 +204,7 @@ async function syncEmployees(){
     let ctUpdated = 0;
 
     let employeesFb =  await fb.collection("employees").get();
+    logger.log("employeesfb = ", employeesFb.docs.length);
     for (let empRef of employeesFb.docs){
         let empFb = empRef.data();
         empFb.updated_at = empFb.updated_at.toDate();
@@ -257,6 +259,7 @@ async function sync(){
     }
 
     await syncEmployees();
+    console.log("waiting for next run");
 }
 
 async function main(){
@@ -270,7 +273,7 @@ async function main(){
     global.config.employeesPhotoPath = '/home/sning/photos/';
 
     await sync();
-    //setInterval(sync, configSync.interval);
+    setInterval(sync, configSync.interval);
 }
 
 main();
